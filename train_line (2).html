@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build the Train Line</title>
+<style>
+:root{
+  --bg:#f5f7fb; --card:#ffffff; --ink:#18213d; --muted:#5b6785; --line:#d9deea;
+  --accent:#2f5bea; --accent-soft:#e3eaff; --good:#15803d; --good-soft:#dcf5e5;
+  --warn:#c2410c; --warn-soft:#ffe9dc; --bad:#b91c1c; --bad-soft:#fde2e2;
+  --grid:#e6eaf3; --axis:#aab3c8; --board:#ffffff; --purple:#7c3aed; --teal:#0f766e;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1424; --card:#171d33; --ink:#e8ecf8; --muted:#9aa6c4; --line:#2a3354;
+    --accent:#7b9bff; --accent-soft:#222c54; --good:#5fd18a; --good-soft:#143524;
+    --warn:#ffa56b; --warn-soft:#3a2416; --bad:#ff8b8b; --bad-soft:#3d1a1a;
+    --grid:#222a47; --axis:#4a557c; --board:#121830; --purple:#b69cff; --teal:#4fd1c5;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{padding:18px 20px 6px;max-width:1280px;margin:0 auto}
+h1{margin:0;font-size:26px;letter-spacing:-.01em}
+.sub{margin:2px 0 12px;color:var(--muted)}
+#steps{display:flex;flex-wrap:wrap;gap:8px}
+#steps button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer}
+#steps button.cur{background:var(--accent);border-color:var(--accent);color:#fff}
+#steps button.done::after{content:" ✓";color:var(--good);font-weight:700}
+#steps button.cur.done::after{color:#fff}
+main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);gap:16px;max-width:1280px;margin:0 auto;padding:10px 20px 30px}
+@media (max-width:980px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+#boardwrap{padding:8px}
+svg{display:block;width:100%;height:auto}
+#board{background:var(--board);border-radius:10px;touch-action:none;user-select:none}
+#graph{margin-top:8px;background:var(--board);border-radius:10px}
+#panel h2{margin:0 0 4px;font-size:21px}
+#panel .goal{margin:0 0 8px;font-size:16px}
+.formula{background:var(--accent-soft);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:15px;overflow-x:auto}
+.facts{margin:8px 0;padding-left:20px}
+.facts li{margin:3px 0}
+.row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:8px 0}
+.row label{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:15px;max-width:100%}
+.row select{max-width:100%}
+input[type=number]{width:84px;font:inherit;font-size:16px;padding:5px 7px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+input[type=range]{width:200px}
+select{font:inherit;font-size:15px;padding:4px 6px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.btn{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:7px 14px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.on{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+.btn:disabled{opacity:.45;cursor:default}
+.readout{font-size:15px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0}
+.readout div{margin:2px 0}
+.ok{color:var(--good);font-weight:600}.no{color:var(--bad);font-weight:600}.mid{color:var(--warn);font-weight:600}
+#fb{margin:8px 0;padding:0}
+#fb .msg{border-radius:10px;padding:9px 12px;font-size:15.5px}
+#fb .good{background:var(--good-soft);color:var(--good)}
+#fb .bad{background:var(--bad-soft);color:var(--bad)}
+#fb .info{background:var(--warn-soft);color:var(--warn)}
+#hints,#working,#note{margin:8px 0}
+#hints .hh{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--muted)}
+.btn.small{padding:2px 10px;font-size:13px}
+.mine{stroke:var(--purple);stroke-width:3.5;stroke-dasharray:9 6;fill:none}
+#hints .h{background:var(--warn-soft);border-radius:10px;padding:7px 12px;margin:6px 0;font-size:15px}
+#working .w{background:var(--accent-soft);border-radius:10px;padding:8px 12px;font-size:15px}
+#note .n{border-left:4px solid var(--good);padding:4px 12px;font-size:15.5px;background:var(--good-soft);border-radius:0 10px 10px 0}
+#working ol{margin:4px 0;padding-left:20px}
+sub{font-size:.75em}
+/* svg */
+.grid{stroke:var(--grid);stroke-width:1}
+.axis{stroke:var(--axis);stroke-width:1.6}
+.tick{fill:var(--muted);font-size:13px}
+.poly{stroke:var(--muted);stroke-width:1.6;stroke-dasharray:6 5;fill:none}
+.curve{stroke:var(--accent);stroke-width:4.5;fill:none;stroke-linecap:round}
+.curve2{stroke:var(--purple);stroke-width:4.5;fill:none;stroke-linecap:round}
+.curve3{stroke:var(--teal);stroke-width:4.5;fill:none;stroke-linecap:round}
+.ghost{stroke:var(--muted);stroke-width:2;fill:none;opacity:.55}
+.cp{fill:var(--ink)}
+.hd{fill:var(--warn);stroke:var(--card);stroke-width:2.5;cursor:grab}
+.hit{fill:transparent;cursor:grab}
+.lbl{fill:var(--ink);font-size:17px;font-weight:600;paint-order:stroke;stroke:var(--board);stroke-width:4px;stroke-linejoin:round}
+.lblm{fill:var(--muted);font-size:15px;paint-order:stroke;stroke:var(--board);stroke-width:4px;stroke-linejoin:round}
+.lblg{fill:var(--good);font-size:17px;font-weight:700;paint-order:stroke;stroke:var(--board);stroke-width:4px;stroke-linejoin:round}
+.lblw{fill:var(--warn);font-size:17px;font-weight:700;paint-order:stroke;stroke:var(--board);stroke-width:4px;stroke-linejoin:round}
+.lblb{fill:var(--bad);font-size:17px;font-weight:700;paint-order:stroke;stroke:var(--board);stroke-width:4px;stroke-linejoin:round}
+.gate{fill:none;stroke:var(--warn);stroke-width:3.5}
+.guess{fill:none;stroke:var(--bad);stroke-width:3.5}
+.train{fill:var(--accent);stroke:var(--card);stroke-width:2.5}
+.xr1{stroke:#ea580c;stroke-width:2.5;fill:none}
+.xr2{stroke:#16a34a;stroke-width:2.5;fill:none}
+.xr3{stroke:#9333ea;stroke-width:3;fill:none}
+.chord{stroke:var(--bad);stroke-width:3.5;fill:none}
+.spd{stroke:var(--accent);stroke-width:3;fill:none}
+.sel{stroke-width:6}
+.tiny{font-size:13px;color:var(--muted)}
+details>summary{cursor:pointer;margin:4px 0}
+@media (max-width:700px){
+  header{padding:14px 14px 4px} h1{font-size:22px} main{padding:8px 12px 24px;gap:12px}
+  .card{padding:12px}
+  .tick{font-size:21px}.lbl,.lblg,.lblw,.lblb{font-size:25px;stroke-width:6px}.lblm{font-size:21px;stroke-width:6px}
+  .btn{padding:10px 16px}
+  input[type=range]{width:min(200px,60vw)}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Build the Train Line</h1>
+  <p class="sub">A hands-on companion to the curves lectures. Five short levels, no timer, no marks: compute, drag, and watch what happens.</p>
+  <nav id="steps"></nav>
+  <p class="tiny" style="margin:8px 0 0"><button class="btn" id="bReset" style="padding:2px 8px;font-size:12px">Clear ✓ marks</button></p>
+</header>
+<main>
+  <section class="card" id="boardwrap">
+    <svg id="board" viewBox="0 0 760 560" role="img" aria-label="Track drawing board"></svg>
+    <svg id="graph" viewBox="0 0 760 170" style="display:none" role="img" aria-label="Speed of the train over time"></svg>
+    
+  </section>
+  <aside class="card" id="panel">
+    <h2 id="title"></h2>
+    <div id="story"></div>
+    <div id="inputs"></div>
+    <div id="readout"></div>
+    <div id="fb"></div>
+    <div class="btns" id="btns">
+      <button class="btn primary" id="bCheck">Check</button>
+      <button class="btn" id="bHint">Hint</button>
+      <button class="btn" id="bWork">Formulas</button>
+      <button class="btn" id="bNext" style="display:none">Next level →</button>
+    </div>
+    <div id="hints"></div>
+    <div id="working"></div>
+    <div id="note"></div>
+  </aside>
+</main>
+
+<script>
+'use strict';
+/* ------------------------------------------------------------------ helpers */
+const NS='http://www.w3.org/2000/svg', W=760, H=560;
+const board=document.getElementById('board'), graph=document.getElementById('graph');
+const $=id=>document.getElementById(id);
+const fmt=n=>{const r=Math.round(n*1000)/1000;return (Object.is(r,-0)?0:r).toString()};
+const a1=n=>(Math.round(n*10)/10).toString();
+const pf=p=>'('+fmt(p[0])+', '+fmt(p[1])+')';
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1]], sub=(a,b)=>[a[0]-b[0],a[1]-b[1]], mul=(a,k)=>[a[0]*k,a[1]*k];
+const len=a=>Math.hypot(a[0],a[1]), lerp=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1], cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
+const snap=v=>Math.round(v*10)/10;
+const deg=r=>r*180/Math.PI;
+const angleBetween=(a,b)=>Math.abs(deg(Math.atan2(cross(a,b),dot(a,b))));
+function bez(P,t){const u=1-t;return [0,1].map(i=>u*u*u*P[0][i]+3*t*u*u*P[1][i]+3*t*t*u*P[2][i]+t*t*t*P[3][i]);}
+function dbez(P,t){const u=1-t;return [0,1].map(i=>3*u*u*(P[1][i]-P[0][i])+6*u*t*(P[2][i]-P[1][i])+3*t*t*(P[3][i]-P[2][i]));}
+function casteljau(P,t){const r1=[0,1,2].map(i=>lerp(P[i],P[i+1],t));const r2=[0,1].map(i=>lerp(r1[i],r1[i+1],t));const r3=[lerp(r2[0],r2[1],t)];return [P,r1,r2,r3];}
+function split(P,t=.5){const c=casteljau(P,t);return [[c[0][0],c[1][0],c[2][0],c[3][0]],[c[3][0],c[2][1],c[1][2],c[0][3]]];}
+function el(tag,attrs,parent,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!==undefined)e.textContent=text;(parent||board).appendChild(e);return e;}
+function parseNum(s){const v=parseFloat(String(s).replace(',','.'));return Number.isFinite(v)?v:null;}
+function clone(P){return P.map(p=>p.slice());}
+
+/* view (world -> screen) */
+let view={cx:5,cy:4,w:12};
+const vh=()=>view.w*H/W;
+const X=x=>(x-(view.cx-view.w/2))/view.w*W;
+const Y=y=>H-(y-(view.cy-vh()/2))/vh()*H;
+const WX=px=>px/W*view.w+(view.cx-view.w/2);
+const WY=py=>(H-py)/H*vh()+(view.cy-vh()/2);
+
+function clearBoard(){while(board.firstChild)board.removeChild(board.firstChild);}
+function drawGrid(){
+  const x0=view.cx-view.w/2,x1=view.cx+view.w/2,h=vh(),y0=view.cy-h/2,y1=view.cy+h/2;
+  const step=view.w>16?2:1;
+  for(let x=Math.ceil(x0);x<=x1;x++){ if(x%step)continue; el('line',{x1:X(x),y1:0,x2:X(x),y2:H,class:x===0?'axis':'grid'});
+    el('text',{x:X(x)+3,y:H-6,class:'tick'},board,String(x)); }
+  for(let y=Math.ceil(y0);y<=y1;y++){ if(y%step)continue; el('line',{x1:0,y1:Y(y),x2:W,y2:Y(y),class:y===0?'axis':'grid'});
+    el('text',{x:4,y:Y(y)-4,class:'tick'},board,String(y)); }
+}
+function path(P,cls){return el('path',{d:`M${X(P[0][0])} ${Y(P[0][1])} C${X(P[1][0])} ${Y(P[1][1])}, ${X(P[2][0])} ${Y(P[2][1])}, ${X(P[3][0])} ${Y(P[3][1])}`,class:cls});}
+function poly(pts,cls){return el('polyline',{points:pts.map(p=>X(p[0])+','+Y(p[1])).join(' '),class:cls});}
+function seg(a,b,cls,extra){return el('line',Object.assign({x1:X(a[0]),y1:Y(a[1]),x2:X(b[0]),y2:Y(b[1]),class:cls},extra||{}));}
+function dot_(p,r,cls){return el('circle',{cx:X(p[0]),cy:Y(p[1]),r:r,class:cls});}
+function label(p,txt,dx,dy,cls,anchor){return el('text',{x:X(p[0])+(dx||0),y:Y(p[1])+(dy||0),class:cls||'lbl','text-anchor':anchor||'start'},board,txt);}
+const MS=()=>(window.matchMedia&&window.matchMedia('(max-width:700px)').matches)?1.7:1;
+function handle(id,p){const m=MS();el('circle',{cx:X(p[0]),cy:Y(p[1]),r:11*Math.min(m,1.35),class:'hd','data-h':id});el('circle',{cx:X(p[0]),cy:Y(p[1]),r:23*m,class:'hit','data-h':id});}
+function arrow(a,b,color,width){
+  const A=[X(a[0]),Y(a[1])],B=[X(b[0]),Y(b[1])],d=[B[0]-A[0],B[1]-A[1]],L=Math.hypot(d[0],d[1]); if(L<2)return;
+  const u=[d[0]/L,d[1]/L],n=[-u[1],u[0]],s=11;
+  el('line',{x1:A[0],y1:A[1],x2:B[0]-u[0]*s*.6,y2:B[1]-u[1]*s*.6,stroke:color,'stroke-width':width||3.5,'stroke-linecap':'round'});
+  el('polygon',{points:`${B[0]},${B[1]} ${B[0]-u[0]*s*1.4+n[0]*s*.6},${B[1]-u[1]*s*1.4+n[1]*s*.6} ${B[0]-u[0]*s*1.4-n[0]*s*.6},${B[1]-u[1]*s*1.4-n[1]*s*.6}`,fill:color});
+}
+function trainAt(P,t,color){
+  const p=bez(P,t),d=dbez(P,t);const ang=-Math.atan2(d[1],d[0])*180/Math.PI;
+  const g=el('g',{transform:`translate(${X(p[0])} ${Y(p[1])}) rotate(${ang})`});
+  el('rect',{x:-17,y:-10,width:34,height:20,rx:6,class:'train',style:color?`fill:${color}`:''},g);
+  el('polygon',{points:'17,-8 27,0 17,8',fill:'var(--warn)'},g);
+  el('circle',{cx:-6,cy:11,r:4,fill:'var(--ink)'},g);el('circle',{cx:6,cy:11,r:4,fill:'var(--ink)'},g);
+}
+
+/* ------------------------------------------------------------------ panel plumbing */
+let cur=0, done=JSON.parse((()=>{try{return localStorage.getItem('trainline.done.v8')||'[]'}catch(e){return '[]'}})());
+let fields=[], hintsShown=0, drag=null, anim=null;
+function saveDone(){try{localStorage.setItem('trainline.done.v8',JSON.stringify(done));}catch(e){}}
+function say(kind,html){ $('fb').innerHTML=html?`<div class="msg ${kind}">${html}</div>`:''; }
+function numField(parent,labelHtml,get,set){
+  const lab=document.createElement('label');lab.innerHTML='<span>'+labelHtml+'</span>';
+  const inp=document.createElement('input');inp.type='number';inp.step='any';inp.inputMode='decimal';
+  const f={inp,get};fields.push(f);
+  inp.addEventListener('input',()=>{const v=parseNum(inp.value);if(v!==null){set(v);}levels[cur].render();});
+  lab.appendChild(inp);parent.appendChild(lab);return f;
+}
+function emptyField(parent,labelHtml){ // text-only answer fields (no live model)
+  const lab=document.createElement('label');lab.innerHTML='<span>'+labelHtml+'</span>';
+  const inp=document.createElement('input');inp.type='number';inp.step='any';inp.inputMode='decimal';lab.appendChild(inp);parent.appendChild(lab);return inp;}
+function syncInputs(){for(const f of fields){if(document.activeElement!==f.inp){const v=f.get();f.inp.value=(v===null||v===undefined)?'':fmt(v);}}}
+function newRow(){const r=document.createElement('div');r.className='row';$('inputs').appendChild(r);return r;}
+function stopAnim(){if(anim){cancelAnimationFrame(anim.id);anim=null;}}
+function buildSteps(){
+  const nav=$('steps');nav.innerHTML='';
+  levels.forEach((L,i)=>{const b=document.createElement('button');b.textContent=(i+1)+'. '+L.short;b.className=(i===cur?'cur ':'')+(done.includes(i)?'done':'');b.onclick=()=>go(i);nav.appendChild(b);});
+}
+function go(i){
+  stopAnim();cur=i;fields=[];hintsShown=0;
+  ['story','inputs','readout','fb','hints','working','note'].forEach(k=>$(k).innerHTML='');
+  $('title').textContent=(i+1)+'. '+levels[i].title;
+  hintsHidden=false;$('bWork').textContent='Formulas';
+  $('bNext').style.display='none';$('bCheck').style.display=levels[i].noCheck?'none':'';
+  $('bHint').style.display=levels[i].hints&&levels[i].hints.length?'':'none';
+  $('bWork').style.display=levels[i].formulas?'':'none';
+  graph.style.display=levels[i].graph?'':'none';
+  levels[i].setup();buildSteps();levels[i].render();syncInputs();
+}
+function pass(noteHtml){
+  if(!done.includes(cur)){done.push(cur);saveDone();}
+  buildSteps();
+  if(noteHtml)$('note').innerHTML=`<div class="n">${noteHtml}</div>`;
+  if(cur<levels.length-1){$('bNext').style.display='';}
+}
+$('bCheck').onclick=()=>levels[cur].check();
+$('bNext').onclick=()=>go(cur+1);
+$('bReset').onclick=()=>{done=[];saveDone();buildSteps();};
+let hintsHidden=false;
+function renderHints(){
+  const H_=levels[cur].hints,box=$('hints');box.innerHTML='';if(hintsShown===0)return;
+  const head=document.createElement('div');head.className='hh';
+  head.innerHTML=`<span><b>Hints</b> (${hintsShown} of ${H_.length})</span>`;
+  const t=document.createElement('button');t.className='btn small';t.textContent=hintsHidden?'Show':'Hide';
+  t.onclick=()=>{hintsHidden=!hintsHidden;renderHints();};head.appendChild(t);box.appendChild(head);
+  if(hintsHidden)return;
+  for(let i=0;i<hintsShown;i++){const d=document.createElement('div');d.className='h';d.innerHTML=`<b>${i+1}.</b> `+H_[i];box.appendChild(d);}
+}
+$('bHint').onclick=()=>{const H_=levels[cur].hints;
+  if(hintsHidden&&hintsShown>0){hintsHidden=false;renderHints();return;}
+  if(hintsShown<H_.length){hintsShown++;hintsHidden=false;renderHints();}else{say('info','No more hints. Check the formulas, or ask your instructor.');}};
+$('bWork').onclick=()=>{const w=$('working');if(w.innerHTML){w.innerHTML='';$('bWork').textContent='Formulas';}else{w.innerHTML=levels[cur].formulas();$('bWork').textContent='Hide formulas';}};
+
+/* dragging */
+board.addEventListener('pointerdown',e=>{const t=e.target.closest('[data-h]');
+  if(!t){const L=levels[cur];if(L.onTap){const r=board.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W,py=(e.clientY-r.top)/r.height*H;L.onTap([WX(px),WY(py)],[px,py]);e.preventDefault();}return;}
+  drag={id:t.getAttribute('data-h')};if(levels[cur].onDown)levels[cur].onDown(drag.id);e.preventDefault();});
+window.addEventListener('pointermove',e=>{
+  if(!drag)return;const r=board.getBoundingClientRect();
+  const sn=levels[cur].snapTo,sf=sn?(v=>Math.round(v/sn)*sn):snap;
+  const p=[sf(WX((e.clientX-r.left)/r.width*W)),sf(WY((e.clientY-r.top)/r.height*H))];
+  levels[cur].onDrag(drag.id,p);syncInputs();levels[cur].render();
+});
+window.addEventListener('pointerup',()=>{const d=drag;drag=null;if(d&&levels[cur].onUp)levels[cur].onUp(d.id);});
+window.addEventListener('pointercancel',()=>{drag=null;});
+try{window.matchMedia('(max-width:700px)').addEventListener('change',()=>{if(typeof levels!=='undefined')levels[cur].render();});}catch(e){}
+window.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number'&&!levels[cur].noCheck){levels[cur].check();}});
+
+/* ------------------------------------------------------------------ shared pieces */
+function joinInfo(hin,hout){
+  const ang=(len(hin)>1e-9&&len(hout)>1e-9)?angleBetween(hin,hout):180;
+  const fwd=dot(hin,hout)>0;
+  const diff=len(sub(hout,hin));
+  return {angle:ang,fwd,ratio:len(hin)>1e-9?len(hout)/len(hin):0,c1:diff<=0.25,g1:fwd&&ang<=3,diff};
+}
+function joinBadge(info){ return info.c1?['C¹','ok']:info.g1?['G¹ only','mid']:['corner','no']; }
+function niceStep(v){const k=Math.pow(10,Math.floor(Math.log10(v/5)));const r=(v/5)/k;return (r<=1?1:r<=2?2:r<=5?5:10)*k;}
+function speedGraph(pieces,tau,T,order){
+  order=order||1;const vec=(P,t)=>order===1?dbez(P,t):d2bez(P,t),sc=order===1?1/T:1;
+  while(graph.firstChild)graph.removeChild(graph.firstChild);
+  const n=pieces.length,total=n*T,L=48,R=748,top=14,bot=140;
+  const samples=[];let vmax=0;
+  pieces.forEach((P,i)=>{for(let k=0;k<=60;k++){const t=k/60,v=len(vec(P,t))*sc;samples.push([i*T+t*T,v]);vmax=Math.max(vmax,v);}});
+  vmax=Math.ceil(vmax*1.1);
+  const gx=s=>L+(s/total)*(R-L),gy=v=>bot-(v/vmax)*(bot-top);
+  el('line',{x1:L,y1:bot,x2:R,y2:bot,class:'axis'},graph);el('line',{x1:L,y1:top,x2:L,y2:bot,class:'axis'},graph);
+  el('text',{x:R,y:top+6,class:'tick','text-anchor':'end'},graph,order===1?'speed':'size of f″');el('text',{x:R-60,y:bot+22,class:'tick'},graph,'time →');
+  const vs_=Math.max(1,niceStep(vmax));for(let v=0;v<=vmax;v+=vs_){el('line',{x1:L,y1:gy(v),x2:R,y2:gy(v),class:'grid'},graph);el('text',{x:L-22,y:gy(v)+4,class:'tick'},graph,String(v));}
+  for(let i=1;i<n;i++){el('line',{x1:gx(i*T),y1:top,x2:gx(i*T),y2:bot,stroke:'var(--muted)','stroke-dasharray':'4 4','stroke-width':1.5},graph);el('text',{x:gx(i*T)+4,y:top+10,class:'tick'},graph,'join '+i);}
+  // draw each piece separately so a jump shows as a vertical step
+  pieces.forEach((P,i)=>{
+    const seg_=[];for(let k=0;k<=60;k++){const t=k/60;seg_.push([i*T+t*T,len(vec(P,t))*sc]);}
+    el('polyline',{points:seg_.map(s=>gx(s[0])+','+gy(s[1])).join(' '),class:'spd'},graph);});
+  for(let i=1;i<n;i++){const va=vec(pieces[i-1],1),vb=vec(pieces[i],0),a=len(va)*sc,b=len(vb)*sc;
+    if(Math.abs(a-b)>0.25){el('line',{x1:gx(i*T),y1:gy(a),x2:gx(i*T),y2:gy(b),stroke:'var(--bad)','stroke-width':3.5},graph);}
+    else if(order===2&&len(sub(va,vb))>0.3){el('circle',{cx:gx(i*T),cy:gy(a),r:6,fill:'var(--bad)'},graph);}}
+  if(tau!==null&&tau!==undefined){el('line',{x1:gx(tau),y1:top,x2:gx(tau),y2:bot,stroke:'var(--warn)','stroke-width':2.5},graph);}
+}
+function rideControls(parent,pieces_fn,T,onFrame){
+  const row=document.createElement('div');row.className='row';
+  const btn=document.createElement('button');btn.className='btn';btn.textContent='▶ Ride';
+  const rng=document.createElement('input');rng.type='range';rng.min=0;rng.step=0.01;rng.value=0;
+  const st={tau:0,playing:false,rng,btn,T};
+  rng.max=pieces_fn().length*T;
+  rng.addEventListener('input',()=>{st.tau=parseFloat(rng.value);st.playing=false;btn.textContent='▶ Ride';stopAnim();onFrame(st);});
+  btn.onclick=()=>{
+    if(st.playing){st.playing=false;btn.textContent='▶ Ride';stopAnim();return;}
+    if(st.onStart)st.onStart();if(st.tau>=pieces_fn().length*T-1e-6)st.tau=0;st.playing=true;btn.textContent='⏸ Pause';let last=null;
+    const loop=now=>{if(!st.playing)return;if(last===null)last=now;const dt=Math.max(0,Math.min(0.1,(now-last)/1000));last=now;const tot=pieces_fn().length*T;st.tau+=dt;if(st.tau>=tot){if(st.onEnd){st.tau=tot;rng.value=tot;onFrame(st);if(st.onEnd(st)!==true)return;}st.tau=0;st.prev=0;}rng.max=tot;rng.value=st.tau;onFrame(st);anim={id:requestAnimationFrame(loop)};};
+    anim={id:requestAnimationFrame(loop)};
+  };
+  row.appendChild(btn);const l=document.createElement('label');l.innerHTML='time ';l.appendChild(rng);row.appendChild(l);parent.appendChild(row);
+  return st;
+}
+function trainOnTrack(pieces,tau,T,color){
+  const n=pieces.length;tau=Math.max(0,tau);let i=Math.max(0,Math.min(n-1,Math.floor(tau/T))),t=(tau-i*T)/T; if(tau>=n*T){i=n-1;t=1;}
+  trainAt(pieces[i],Math.max(0,Math.min(1,t)),color);
+}
+
+/* ------------------------------------------------------------------ shared math for the levels */
+function distLine(p,a,b){const d=sub(b,a),L=len(d);return L<1e-9?len(sub(p,a)):Math.abs(cross(d,sub(p,a)))/L;}
+function bulge(P){return Math.max(distLine(P[1],P[0],P[3]),distLine(P[2],P[0],P[3]));}
+const dataTable=rows=>'<table style="border-collapse:collapse;margin:6px 0;font-size:15px">'+rows.map(r=>'<tr>'+r.map((c,i)=>`<td style="padding:2px 12px 2px 0;${i===0?'font-weight:600':''}">${c}</td>`).join('')+'</tr>').join('')+'</table>';
+const NOCOMP='';
+function d2s(P){return mul(add(sub(P[0],mul(P[1],2)),P[2]),6);}   /* f''(0) = 6(P0 - 2P1 + P2) */
+function d2e(P){return mul(add(sub(P[1],mul(P[2],2)),P[3]),6);}   /* f''(1) = 6(P1 - 2P2 + P3) */
+function d2bez(P,t){return [0,1].map(i=>(6-6*t)*P[0][i]+(-12+18*t)*P[1][i]+(6-18*t)*P[2][i]+6*t*P[3][i]);}
+
+
+/* ------------------------------------------------------------------ LEVEL 2 */
+const L2={short:'Through the gate',title:'Through the gate',
+  P:[[0,0],[3,3],[7,3],[10,0]],stage:0,vin:null,
+  setup(){
+    this.P=[[0,0],[3,3],[7,3],[10,0]];this.stage=0;
+    $('story').innerHTML=`<p class="goal">The track starts at <b>P<sub>0</sub> = (0, 0)</b> and ends at <b>P<sub>3</sub> = (10, 0)</b>. Choose the two middle control points <b>P<sub>1</sub></b> and <b>P<sub>2</sub></b> so that both facts hold:</p>
+      <ul class="facts"><li><b>Fact 1.</b> At t = 0.5 the train passes the gate at <b>(5, 3)</b>.</li>
+      <li><b>Fact 2.</b> The train <i>leaves</i> P<sub>0</sub> with velocity <b>(6, 18)</b>.</li></ul>
+      <p class="tiny">Type your answer or drag the orange handles. The readout shows what your track does right now.</p>${NOCOMP}`;
+    const r=newRow(),s=this;
+    numField(r,'P<sub>1</sub> x =',()=>s.P[1][0],v=>s.P[1][0]=v);numField(r,'y =',()=>s.P[1][1],v=>s.P[1][1]=v);
+    const r2=newRow();
+    numField(r2,'P<sub>2</sub> x =',()=>s.P[2][0],v=>s.P[2][0]=v);numField(r2,'y =',()=>s.P[2][1],v=>s.P[2][1]=v);
+  },
+  vstart(){return mul(sub(this.P[1],this.P[0]),3);},
+  vend(){return mul(sub(this.P[3],this.P[2]),3);},
+  render(){
+    view={cx:5,cy:3.2,w:13};clearBoard();drawGrid();const P=this.P;
+    poly(P,'poly');path(P,'curve');
+    const g=[5,3];el('circle',{cx:X(5),cy:Y(3),r:17,class:'gate'});label(g,'gate (5, 3)',0,-26,'lblw','middle');
+    const m=bez(P,.5);dot_(m,7,'train');
+    [0,1,2,3].forEach(i=>{dot_(P[i],6,'cp');});
+    label(P[0],'P₀ (0, 0)',-8,26,'lbl','start');label(P[3],'P₃ (10, 0)',8,26,'lbl','end');
+    handle('1',P[1]);handle('2',P[2]);
+    label(P[1],'P₁ '+pf(P[1]),12,-14);label(P[2],'P₂ '+pf(P[2]),-12,-14,'lbl','end');
+    const vs=this.vstart(),okS=len(sub(vs,[6,18]))<=0.35;
+    arrow(P[0],add(P[0],mul(vs,0.17)),okS?'var(--good)':'var(--warn)',4);
+    if(this.stage>=1){const ve=this.vend();arrow(P[3],add(P[3],mul(ve,0.17)),'var(--accent)',4);}
+    const okG=Math.hypot(m[0]-5,m[1]-3)<=0.12;
+    $('readout').innerHTML=`<div>At t = 0.5 your train is at <b>${pf(m)}</b> &nbsp;${okG?'<span class="ok">✓ at the gate</span>':'<span class="no">(gate is at (5, 3))</span>'}</div>
+      <div>Leaving velocity 3(P<sub>1</sub> − P<sub>0</sub>) = <b>${pf(vs)}</b> &nbsp;${okS?'<span class="ok">✓</span>':'<span class="no">(needed (6, 18))</span>'}</div>`;
+  },
+  onDrag(id,p){const i=parseInt(id);if(i===1||i===2)this.P[i]=p;},
+  check(){
+    if(this.stage===2){say('good','Already done. Go on to the next level.');return;}
+    if(this.stage===1){
+      const x=parseNum(this.vin[0].value),y=parseNum(this.vin[1].value);
+      if(x===null||y===null){say('info','Type both components.');return;}
+      const need=this.vend();
+      if(Math.hypot(x-need[0],y-need[1])<=0.2){this.stage=2;this.render();say('good',`✓ Arriving velocity ${pf(need)}.`);
+        pass('A control point next to an end <i>is</i> the velocity there: v = 3 × (neighbor − end point). The train leaves P<sub>0</sub> toward P<sub>1</sub> and arrives at P<sub>3</sub> coming from P<sub>2</sub>. Next: what happens when two pieces meet?');}
+      else say('bad','Not yet. The velocity at the end uses P<sub>3</sub> and the P<sub>2</sub> <i>you</i> found. Check the formula for the velocity at t = 1: it uses P<sub>3</sub> and P<sub>2</sub>, and the answer is a pair of numbers (v<sub>x</sub>, v<sub>y</sub>).');
+      return;
+    }
+    const m=bez(this.P,.5),eg=Math.hypot(m[0]-5,m[1]-3),ev=len(sub(this.vstart(),[6,18]));
+    if(eg<=0.12&&ev<=0.35){
+      this.stage=1;this.render();
+      say('good','✓ Both facts hold. Now answer the question <b>Part 2</b> just below the facts.');
+      const q=document.createElement('div');q.innerHTML='<p class="goal"><b>Part 2.</b> With the P<sub>1</sub> and P<sub>2</sub> you just found, the train arrives at P<sub>3</sub> at t = 1. Its velocity there is a vector, the derivative P′(1). Type its two components: <b>v<sub>x</sub></b> (horizontal) and <b>v<sub>y</sub></b> (vertical), in units per unit of t. The same kind of vector as the (6, 18) in Fact 2, but at the other end.</p>';
+      $('story').appendChild(q);
+      const r=newRow();r.insertAdjacentHTML('afterbegin','<span class="tiny" style="width:100%">Velocity at P<sub>3</sub>:</span>');this.vin=[emptyField(r,'v<sub>x</sub> ='),emptyField(r,'v<sub>y</sub> =')];this.render();
+    }else{
+      let s='Not yet. ';
+      if(ev>0.35)s+=`Your leaving velocity is ${pf(this.vstart())}, the facts say (6, 18). `;
+      if(eg>0.12)s+=`At t = 0.5 your train is ${fmt(eg)} units from the gate.`;
+      say('bad',s);
+    }
+  },
+  hints:[
+    'Fact 2 involves only P₀ and P₁. Which formula gives the velocity at the start?',
+    'Fact 1: write P(0.5) with the four weights. Two of the four points are already known, and P₁ is known from Fact 2. What is left?',
+    'The weights of P₁ and P₂ are equal at t = 0.5, so Fact 1 gives you their sum. How do you get P₂ from the sum and P₁?'
+  ],
+  formulas(){return `<div class="formula">P(t) = (1−t)³P<sub>0</sub> + 3t(1−t)²P<sub>1</sub> + 3t²(1−t)P<sub>2</sub> + t³P<sub>3</sub><br>velocity at the start = 3(P<sub>1</sub> − P<sub>0</sub>)<br>velocity at the end = 3(P<sub>3</sub> − P<sub>2</sub>)</div>`;}
+};
+
+/* ------------------------------------------------------------------ LEVEL 3 */
+const A3=[[1,1],[2,6],[5,7],[7,4]];
+const B4=[[7,4],[9,1],[11,2],[12,5]];
+/* ------------------------------------------------------------------ LEVEL 3: fix the track */
+const L3={short:'Fix the track',title:'Fix the track',graph:true,T:3,B:null,C:null,stage:0,st:null,
+  setup(){
+    this.B=[[7,4],[10,5],[11,2],[12,5]];this.C=[[12,5],[12.5,6.5],[15,8],[16,5]];this.stage=1;
+    this.build();
+  },
+  pieces(){return this.stage>=2?[A3,this.B,this.C]:[A3,this.B];},
+  goalText(){return [
+    '<b>Part A.</b> Join 1 has a corner. Choose <b>Q<sub>1</sub></b> so that join 1 is <b>C¹</b>: no corner and no change of speed. Press <b>Ride</b> to see the speed.',
+    '<b>Part B.</b> The track now continues with a third piece R. Q<sub>1</sub> is fixed from Part A. Press <b>Ride</b> and watch the speed graph: something is wrong. <b>Find it</b> and choose <b>R<sub>1</sub></b> so that <b>both</b> joins are C¹.'][Math.min(this.stage,2)-1];},
+  build(){
+    stopAnim();fields=[];hintsShown=0;hintsHidden=false;$('hints').innerHTML='';$('inputs').innerHTML='';$('fb').innerHTML='';
+    const s=this,rows=[['P<sub>0</sub> = (1, 1)','P<sub>1</sub> = (2, 6)'],['P<sub>2</sub> = (5, 7)','P<sub>3</sub> = (7, 4)'],['Q<sub>0</sub> = (7, 4) = P<sub>3</sub>',this.stage>=2?'Q<sub>1</sub> = (9, 1)':'Q<sub>1</sub> = ?'],['Q<sub>2</sub> = (11, 2)','Q<sub>3</sub> = (12, 5)']];
+    if(this.stage>=2)rows.push(['R<sub>0</sub> = (12, 5) = Q<sub>3</sub>','R<sub>1</sub> = ?'],['R<sub>2</sub> = (15, 8)','R<sub>3</sub> = (16, 5)']);
+    $('story').innerHTML=`<p class="goal">A track is built from cubic pieces. You choose some control points so that the train glides along it. The train spends 3 s on each piece. Press <b>Ride</b> and watch the speed graph.</p>${dataTable(rows)}<p class="goal" id="g3">${this.goalText()}</p>${NOCOMP}`;
+    const r=newRow();
+    if(this.stage<2){numField(r,'Q<sub>1</sub> x =',()=>s.B[1][0],v=>s.B[1][0]=v);numField(r,'y =',()=>s.B[1][1],v=>s.B[1][1]=v);}
+    else{numField(r,'R<sub>1</sub> x =',()=>s.C[1][0],v=>s.C[1][0]=v);numField(r,'y =',()=>s.C[1][1],v=>s.C[1][1]=v);}
+    const r2=document.createElement('div');$('inputs').appendChild(r2);
+    this.st=rideControls(r2,()=>this.pieces(),this.T,()=>this.render());
+    if($('working').innerHTML){$('working').innerHTML=this.formulas();}
+  },
+  info1(){return joinInfo(sub(A3[3],A3[2]),sub(this.B[1],this.B[0]));},
+  info2(){return joinInfo(sub(this.B[3],this.B[2]),sub(this.C[1],this.C[0]));},
+  render(){
+    view=this.stage>=2?{cx:8.5,cy:3.8,w:19}:{cx:7,cy:3.2,w:17};clearBoard();drawGrid();
+    const B=this.B,C=this.C,pcs=this.pieces();
+    pcs.forEach(P=>poly(P,'poly'));path(A3,'curve');path(B,'curve2');if(this.stage>=2)path(C,'curve3');
+    const tau=this.st?this.st.tau:0,T=this.T;
+    if(this.st)this.st.rng.max=pcs.length*T;
+    trainOnTrack(pcs,tau,T);
+    if(this.stage<2){
+      arrow(A3[2],A3[3],'var(--accent)',5);arrow(B[0],B[1],'var(--purple)',5);
+      [A3[0],A3[1],A3[2],B[2],B[3]].forEach(p=>dot_(p,6,'cp'));
+      label(A3[2],'P₂ '+pf(A3[2]),-10,-14,'lbl','end');
+      handle('1',B[1]);label(B[1],'Q₁ '+pf(B[1]),12,-14);
+    }else{
+      [A3[0],A3[1],A3[2],B[1],B[2],C[2],C[3]].forEach(p=>dot_(p,6,'cp'));
+      handle('c',C[1]);label(C[1],'R₁ '+pf(C[1]),12,-14);
+    }
+    [[A3,B,1],[B,C,2]].forEach(([P,Q,k])=>{if(k===2&&this.stage<2)return;
+      const inf=joinInfo(sub(P[3],P[2]),sub(Q[1],Q[0])),[bt,bc]=joinBadge(inf);
+      el('circle',{cx:X(Q[0][0]),cy:Y(Q[0][1]),r:12,class:'gate'});
+      label(Q[0],'join '+k+': '+bt,10,30,bc==='ok'?'lblg':bc==='mid'?'lblw':'lblb');});
+    speedGraph(pcs,tau,T);
+    if(this.stage<2){const inf=this.info1(),hin=sub(A3[3],A3[2]),hout=sub(B[1],B[0]),[bt,bc]=joinBadge(inf);
+      $('readout').innerHTML=`<div>Incoming handle P₃ − P₂ = <b>${pf(hin)}</b> <span class="tiny">(blue arrow)</span></div>
+        <div>Outgoing handle Q₁ − Q₀ = <b>${pf(hout)}</b> <span class="tiny">(purple arrow)</span></div>
+        <div>Angle between them: <b>${a1(inf.angle)}°</b> &nbsp; Length ratio out/in: <b>${fmt(inf.ratio)}</b></div>
+        <div>Join 1 is: <span class="${bc}">${bt}</span></div>`;}
+    else{const i1=this.info1(),i2=this.info2();
+      $('readout').innerHTML=`<div>Join 1: speed ${fmt(len(sub(A3[3],A3[2])))} → ${fmt(len(sub(B[1],B[0])))} &nbsp;<span class="${joinBadge(i1)[1]}">${joinBadge(i1)[0]}</span></div>
+        <div>Join 2: speed ${fmt(len(sub(B[3],B[2])))} → ${fmt(len(sub(C[1],C[0])))} &nbsp;<span class="${joinBadge(i2)[1]}">${joinBadge(i2)[0]}</span></div>`;}
+  },
+  onDrag(id,p){if(id==='1')this.B[1]=p;if(id==='c')this.C[1]=p;},
+  check(){
+    const inf=this.info1(),B=this.B;
+    if(this.stage===3){say('good','Already done. Go on to the next level.');return;}
+    if(this.stage===0){
+      if(Math.abs(B[1][0]-10)>0.05){say('bad','Part A fixes x = 10. Keep that and adjust y.');return;}
+      if(inf.g1){this.stage=1;$('g3').innerHTML=this.goalText();say('good','✓ No corner. Press Ride: the speed graph jumps at the join, because G¹ only fixes the direction.');}
+      else if(!inf.fwd)say('bad','The track doubles back on itself: the outgoing handle must point the same way as the incoming one.');
+      else say('bad',`There is still a corner: the handles are ${a1(inf.angle)}° apart. With no corner, the two handles lie along one line.`);
+    }else if(this.stage===1){
+      if(inf.c1){this.stage=2;this.B[1]=[9,1];this.build();this.render();say('good','✓ The velocities match: join 1 is C¹ and the graph has no jump there. Now the track gets a third piece.');}
+      else say('bad',`Not C¹ yet. ${inf.g1?'The direction is right, but the speed changes at the join.':'The handles also point in different directions.'} Compare the two velocities with the formula.`);
+    }else{
+      const i2=this.info2();
+      if(i2.c1&&inf.c1){this.stage=3;say('good','✓ Both joins are C¹: the speed graph is continuous and the train glides through.');
+        pass('A lurch is a jump in speed. The speed at the end of a piece is set by the length of its last handle, so two pieces with different handle lengths give a jump even when the direction is perfect. C¹ means the velocity vector matches, so there is no jump and no corner. G¹ only asks for the same direction.');}
+      else if(!i2.g1)say('bad',`Join 2 has a corner: the handles are ${a1(i2.angle)}° apart. First fix the direction of the outgoing handle, then its length.`);
+      else say('bad',`Join 2 has the right direction, but the speed jumps: in the graph the train ${i2.ratio<1?'brakes':'speeds up'} at the join. Use the velocity formulas on both sides of join 2.`);
+    }
+    this.render();
+  },
+  get hints(){return [
+    ['No corner means the incoming and outgoing handles are parallel. Write the outgoing handle as Q₁ − Q₀ and use the given x to see how many times the incoming handle (2, −3) fits.','If the outgoing handle is k times the incoming one, its x part is 2k. Solve for k, then compute the y part.'],
+    ['C¹ is the case k = 1: the velocity formulas at the end of A and the start of B must give the same vector.','Q₁ = Q₀ + (P₃ − P₂).'],
+    ['Press Ride and look at the speed graph. Where is the vertical jump? That is the bad join.','C¹ at a join means: velocity at the end of B = velocity at the start of C. Write both with the velocity formulas, 3(Q₃ − Q₂) and 3(R₁ − R₀).','Set them equal and solve for R₁. R₀ is the join point and the answer is a point, so add the handle to R₀.']
+  ][Math.min(this.stage,2)];},
+  formulas(){return `<div class="formula">velocity at the end of a piece = 3(P<sub>3</sub> − P<sub>2</sub>)<br>velocity at the start of a piece = 3(P<sub>1</sub> − P<sub>0</sub>)<br>C¹ at a join between piece P and the next piece Q: 3(Q<sub>1</sub> − Q<sub>0</sub>) = 3(P<sub>3</sub> − P<sub>2</sub>).<br>G¹: the two handles point the same way: Q<sub>1</sub> − Q<sub>0</sub> = k (P<sub>3</sub> − P<sub>2</sub>) for some k &gt; 0.<br>Solve for the one unknown control point; remember it is a point, not a handle.</div>`;}
+};
+
+/* ------------------------------------------------------------------ LEVEL 4: draw it with lines */
+function adaptPieces(P,tol,d){d=d||0;if(bulge(P)<=tol||d>12)return [P];const h=split(P);return adaptPieces(h[0],tol,d+1).concat(adaptPieces(h[1],tol,d+1));}
+function adaptPts(P,tol){const ps=adaptPieces(P,tol);return ps.map(q=>q[0]).concat([ps[ps.length-1][3]]);}
+const P5=[[0,0],[0,8],[8,8],[8,0]],TOL5=1;
+function subPiece(P,a,b){let Q=P;if(a>0)Q=split(Q,a)[1];if(b<1)Q=split(Q,(b-a)/(1-a))[0];return Q;}
+const SAMP5=Array.from({length:401},(_,i)=>({t:i/400,p:bez(P5,i/400)}));
+function nearestT(p){let best=null;SAMP5.forEach(s_=>{const d=Math.hypot(X(s_.p[0])-X(p[0]),Y(s_.p[1])-Y(p[1]));if(!best||d<best.d)best={d,t:s_.t};});return best;}
+const TOLD=0.5,GOALS=[1,4,8];
+const LD={short:'Draw it with lines',title:'Draw it with lines',ph:'sub',gi:0,D:null,q:null,ts:[],moved:false,
+  get snapTo(){return this.ph==='sub'?0.01:null;},
+  setup(){this.ph='sub';this.gi=0;this.D=[[3,1.5],[7,1.5]];this.ts=[];this.buildSub();},
+  pieceList(){const t=[0,...this.ts,1],out=[];for(let i=0;i<t.length-1;i++){const Q=subPiece(P5,t[i],t[i+1]);out.push({a:t[i],b:t[i+1],Q,bl:bulge(Q)});}return out;},
+  buildSub(){
+    stopAnim();fields=[];hintsShown=0;hintsHidden=false;$('hints').innerHTML='';$('inputs').innerHTML='';$('note').innerHTML='';$('working').innerHTML='';
+    $('story').innerHTML=`<p class="goal">The screen can only draw <b>straight lines</b>. <b>Tap the curve</b> to place a dot, <b>tap a dot</b> to remove it, <b>drag a dot</b> to move it along the curve. The page joins neighbouring dots with a straight line and measures the <b>bulge</b> of each piece of curve. A piece is flat enough when its bulge is at most the tolerance, <b>${TOL5}</b>.</p>
+      <p class="goal">Curve: A = (0, 0), B = (0, 8), C = (8, 8), D = (8, 0). Find the fewest lines for which every piece is flat enough, then press <b>Check</b>.</p>`;
+    const r=newRow(),s_=this;const b=document.createElement('button');b.className='btn';b.textContent='Clear dots';b.onclick=()=>{s_.ts=[];s_.render();say('','');};r.appendChild(b);
+  },
+  renderSub(){
+    view={cx:4,cy:3.6,w:14};clearBoard();drawGrid();poly(P5,'poly');
+    const pl=this.pieceList(),n=pl.length;
+    pl.forEach(pc=>{const e=path(pc.Q,'curve');e.style.stroke=pc.bl<=TOL5?'var(--good)':'var(--bad)';e.style.strokeWidth='6';});
+    pl.forEach(pc=>seg(pc.Q[0],pc.Q[3],'',{stroke:'var(--ink)','stroke-width':3.5}));
+    pl.forEach(pc=>{const cm=lerp(pc.Q[0],pc.Q[3],.5),c=bez(P5,(pc.a+pc.b)/2);let vx=X(c[0])-X(cm[0]),vy=Y(c[1])-Y(cm[1]);const L=Math.hypot(vx,vy);if(L<3){vx=0;vy=-1;}else{vx/=L;vy/=L;}
+      const ok=pc.bl<=TOL5,k=40*Math.min(MS(),1.3);label(c,'bulge '+fmt(pc.bl),vx*k,vy*k+6,ok?'lblg':'lblb','middle');});
+    P5.forEach((p,i)=>{dot_(p,7,'cp');label(p,'ABCD'[i]+' '+pf(p),i<2?-12:12,i===0||i===3?24:-14,'lblm',i<2?'end':'start');});
+    this.ts.forEach((t,i)=>{const p=bez(P5,t);handle('d'+i,p);if(MS()===1)label(p,'t = '+fmt(t),0,28,'lblm','middle');});
+    $('readout').innerHTML=pl.map((pc,i)=>`<div>Piece ${i+1}: bulge <b>${fmt(pc.bl)}</b> ${pc.bl<=TOL5?'<span class="ok">✓ flat enough</span>':'<span class="no">✗ more than '+TOL5+'</span>'}</div>`).join('')+`<div>Lines drawn: <b>${n}</b> <span class="tiny">(tolerance ${TOL5})</span></div>`;
+  },
+  onTap(p){
+    if(this.ph!=='sub')return;
+    const nr=nearestT(p);if(nr.d>38*MS())return;
+    const t=Math.round(nr.t*20)/20;if(t<=0.001||t>=0.999||this.ts.some(x=>Math.abs(x-t)<1e-6))return;
+    this.ts.push(t);this.ts.sort((a,b)=>a-b);say('','');this.render();},
+  onDown(id){this.moved=false;},
+  onUp(id){if(this.ph==='sub'&&id[0]==='d'&&!this.moved){this.ts.splice(parseInt(id.slice(1)),1);say('','');this.render();}},
+  toDesign(msg){this.ph='des';this.gi=0;this.D=[[3,1.5],[7,1.5]];this.buildDes();this.render();if(msg)say('good',msg);},
+  curve(){return [[0,0],this.D[0],this.D[1],[10,0]];},
+  buildDes(){
+    stopAnim();fields=[];hintsShown=0;hintsHidden=false;$('hints').innerHTML='';$('inputs').innerHTML='';$('note').innerHTML='';$('working').innerHTML='';
+    $('story').innerHTML=`<p class="goal"><b>Design a curve.</b> A = (0, 0) and D = (10, 0) are fixed. Drag <b>B</b> and <b>C</b>. The page runs the subdivision algorithm on your curve with tolerance <b>${TOLD}</b> and draws the lines it chooses.</p>
+      <p class="goal" id="dgoal">${this.goalText()}</p>`;
+    if(this.gi>=GOALS.length){
+      const mk=(lab,opts)=>{const r=newRow();const l=document.createElement('label');l.innerHTML='<span>'+lab+'</span>';const sel=document.createElement('select');sel.innerHTML='<option value="">choose…</option>'+opts.map((o,i)=>`<option value="${i}">${o}</option>`).join('');l.appendChild(sel);r.appendChild(l);return sel;};
+      this.q=mk('What decides how many lines the algorithm draws?',['how far the inner control points stick out from their chord, after each split','the length of the curve','where A is']);
+    }
+  },
+  goalText(){
+    const g=GOALS;if(this.gi>=g.length)return '<b>All three done.</b> One last question:';
+    return GOALS.map((n,i)=>`${i<this.gi?'<b class="ok">✓</b>':i===this.gi?'<b>→</b>':'○'} make the algorithm draw <b>exactly ${n} line${n>1?'s':''}</b>`).join('<br>')+'<br><span class="tiny">Press Check when the readout shows the number you want.</span>';
+  },
+  render(){
+    if(this.ph==='sub'){this.renderSub();return;}
+    view={cx:5,cy:2,w:28};clearBoard();drawGrid();
+    const P=this.curve(),pcs=adaptPieces(P,TOLD),pts=pcs.map(q=>q[0]).concat([pcs[pcs.length-1][3]]);
+    poly(P,'poly');path(P,'curve');
+    seg(P[0],P[3],'',{stroke:'var(--muted)','stroke-width':2,'stroke-dasharray':'3 5'});
+    for(let i=0;i<pts.length-1;i++)seg(pts[i],pts[i+1],'chord');
+    pts.forEach((q,i)=>dot_(q,i===0||i===pts.length-1?7:6,'train'));
+    dot_(P[0],7,'cp');dot_(P[3],7,'cp');
+    label(P[0],'A (0, 0)',-12,26,'lbl','end');label(P[3],'D (10, 0)',12,26,'lbl','start');
+    handle('d1',P[1]);handle('d2',P[2]);label(P[1],'B '+pf(P[1]),14,-14);label(P[2],'C '+pf(P[2]),14,-14);
+    const n=pcs.length,[h1,h2]=split(P);
+    const goal=this.gi<GOALS.length?GOALS[this.gi]:null;
+    $('readout').innerHTML=`<div>Bulge of the whole curve: <b>${fmt(bulge(P))}</b> <span class="tiny">(tolerance ${TOLD})</span></div>
+      <div>Bulge of the left half: <b>${fmt(bulge(h1))}</b> &nbsp; right half: <b>${fmt(bulge(h2))}</b></div>
+      <div>Lines drawn: <b class="${goal!==null&&n===goal?'ok':''}">${n}</b>${goal!==null?` <span class="tiny">(goal: ${goal})</span>`:''}</div>`;
+  },
+  onDrag(id,p){
+    if(this.ph==='sub'){
+      if(id[0]!=='d')return;const i=parseInt(id.slice(1));this.moved=true;
+      const nr=nearestT(p),lo=(i>0?this.ts[i-1]:0)+0.05,hi=(i<this.ts.length-1?this.ts[i+1]:1)-0.05;
+      let t=Math.round(nr.t*20)/20;t=Math.max(lo,Math.min(hi,t));this.ts[i]=Math.round(t*100)/100;return;}
+    if(id==='d1')this.D[0]=p;if(id==='d2')this.D[1]=p;
+  },
+  check(){
+    if(this.ph==='sub'){
+      const pl=this.pieceList(),n=pl.length,bad=pl.filter(q=>q.bl>TOL5);
+      if(bad.length){say('bad',`Piece ${pl.indexOf(bad[0])+1} still bulges ${fmt(bad[0].bl)}, more than the tolerance ${TOL5}. Add a dot on it.`);return;}
+      if(n>4){say('info',`Every piece is flat enough, using ${n} lines. Can you do it with fewer?`);return;}
+      this.toDesign('✓ Every piece is flat enough with 4 lines, and fewer lines leave a piece that bulges too much. Now design a curve of your own.');return;}
+    if(this.gi>=GOALS.length){
+      const a=this.q.value;if(!a){say('info','Choose an answer.');return;}
+      if(a==='0'){say('good','✓ Each split halves a piece, and a half bulges much less than the whole. A curve needs more lines the farther its inner control points stick out from the chord, and a sharp bend or loop keeps some pieces bulging through several splits.');
+        pass('This is recursive subdivision: test flatness with the control points (the curve is inside their convex hull, so a flat control polygon means a flat curve); if not flat, split with de Casteljau and repeat on each half. It spends lines only where the curve bends, and needs just midpoints, no cubic evaluation. A larger tolerance stops sooner and uses fewer lines.');}
+      else say('bad','Not that one. Look at what the readout reports for each half.');
+      return;}
+    const n=adaptPieces(this.curve(),TOLD).length,g=GOALS[this.gi];
+    if(n===g){this.gi++;this.buildDes();this.render();say('good',`✓ Exactly ${g} line${g>1?'s':''}.${this.gi<GOALS.length?' Next goal.':''}`);}
+    else say('bad',`The algorithm draws ${n} line${n>1?'s':''} for this curve, not ${g}. ${n<g?'Make the curve need more splitting.':'Make the curve flatter, so fewer pieces need splitting.'}`);
+  },
+  get hints(){
+    if(this.ph==='sub')return ['The whole curve has bulge 8, far above the tolerance. One dot in the middle is a good start: look at the two bulges it gives.','The curve is symmetric. Only the pieces marked red need more dots, and a dot you do not need can be removed.','A dot at t = 0.25, 0.5 and 0.75 gives pieces that are all flat enough. Can any dot be dropped?'];
+    if(this.gi>=GOALS.length)return ['Compare the bulge of the whole curve with the bulge of each half in the readout.'];
+    return [
+      ['A curve needs no split when its bulge is at most the tolerance. Where must B and C be for that?','Both inner control points must be within the tolerance of the line through A and D.'],
+      ['The whole curve is split once into two halves. Each half is then either one line or split again. How many pieces do you need in the end?','Watch the bulges of the two halves in the readout: a half is split again only if its own bulge is above the tolerance.'],
+      ['Halving a piece reduces its bulge a lot, so you need control points far from the chord to keep pieces bulging after several splits.','A sharp spike or a loop keeps some pieces bulging after several splits.']
+    ][this.gi];
+  },
+  formulas(){return `<div class="formula"><b>bulge</b> of a piece = the larger of the distances of its two inner control points from the line through its end points.<br>Distance of a point X from the line through S and T: |(T−S) × (X−S)| / |T−S|, where (u × v) = u<sub>x</sub>v<sub>y</sub> − u<sub>y</sub>v<sub>x</sub> and |w| = √(w<sub>x</sub>² + w<sub>y</sub>²).<br>A piece is flat enough when its bulge ≤ the tolerance.</div>`;}
+};
+
+/* ------------------------------------------------------------------ LEVEL 4: fix a join for C2 */
+const PC=[[1,1],[2,6],[5,7],[7,4]];
+const L5={short:'Fix a join for C²',title:'Fix a join for C²',Q:null,done5:false,
+  setup(){
+    this.Q=[[7,4],[9,1],[11,2],[12,5]];this.done5=false;
+    $('story').innerHTML=`<p class="goal">Two cubic pieces P and Q meet at (7, 4). The join is already <b>C¹</b>. Their control points:</p>
+      ${dataTable([['P<sub>0</sub> = (1, 1)','P<sub>1</sub> = (2, 6)'],['P<sub>2</sub> = (5, 7)','P<sub>3</sub> = (7, 4) = Q<sub>0</sub>'],['Q<sub>1</sub> = (9, 1)','Q<sub>2</sub> = ?'],['Q<sub>3</sub> = (12, 5)','']])}
+      <p class="goal">Choose <b>Q<sub>2</sub></b> so that the join is <b>C²</b> too: the second derivative at the end of P must equal the second derivative at the start of Q. Type it or drag the orange handle. The blue arrow is f″ at the end of P and the purple arrow is f″ at the start of Q.</p>${NOCOMP}`;
+    const s=this,r=newRow();
+    numField(r,'Q<sub>2</sub> x =',()=>s.Q[2][0],v=>s.Q[2][0]=v);numField(r,'y =',()=>s.Q[2][1],v=>s.Q[2][1]=v);
+  },
+  c2(){return len(sub(d2e(PC),d2s(this.Q)))<=0.3;},
+  render(){
+    view={cx:6.5,cy:0.6,w:24};clearBoard();drawGrid();const Q=this.Q,pcs=[PC,Q];
+    pcs.forEach(P=>poly(P,'poly'));path(PC,'curve');path(Q,'curve2');
+    const J=[7,4],f1=d2e(PC),f2=d2s(Q),k=Math.min(0.12,6/Math.max(len(f1),len(f2),1e-9));
+    arrow(J,add(J,mul(f1,k)),'var(--accent)',6);arrow(J,add(J,mul(f2,k)),'var(--purple)',3.5);
+    label(add(J,mul(f1,k)),'f″ end of P',-12,6,'lbl','end');label(add(J,mul(f2,k)),'f″ start of Q',0,34,'lbl','middle');
+    [PC[0],PC[1],PC[2],Q[1],Q[3]].forEach(p=>dot_(p,6,'cp'));
+    label(PC[1],'P₁',-10,-12,'lbl','end');label(PC[2],'P₂',10,-12);label(Q[1],'Q₁',12,-8);label(Q[3],'Q₃',12,-12);
+    handle('q',Q[2]);label(Q[2],'Q₂ '+pf(Q[2]),12,26);
+    const ok=this.c2();el('circle',{cx:X(7),cy:Y(4),r:12,class:'gate'});
+    label(J,'join: '+(ok?'C²':'C¹ only'),-14,-22,ok?'lblg':'lblw','end');
+    $('readout').innerHTML=`<div>f″ at the end of P = 6(P₁ − 2P₂ + P₃) = <b>${pf(f1)}</b></div>
+      <div>f″ at the start of Q = 6(Q₀ − 2Q₁ + Q₂) = <b>${pf(f2)}</b> &nbsp;${ok?'<span class="ok">✓ equal</span>':'<span class="no">(not equal)</span>'}</div>
+      <div>Join: <span class="${ok?'ok':'mid'}">${ok?'C²':'C¹ only'}</span> <span class="tiny">(the first derivatives already match)</span></div>`;
+  },
+  onDrag(id,p){if(id==='q')this.Q[2]=p;},
+  check(){
+    if(this.done5){say('good','Already done. Go on to the next level.');return;}
+    if(this.c2()){this.done5=true;this.render();say('good','✓ The two f″ arrows coincide: the join is C².');
+      pass('C² adds one more matching condition: the second derivative at the end of P equals the one at the start of Q. Q<sub>2</sub> is the only control point that does this without disturbing C¹, because Q<sub>0</sub> and Q<sub>1</sub> are already fixed by C¹. Q<sub>3</sub> stays free. Next: try it in the playground.');}
+    else{const f1=d2e(PC),f2=d2s(this.Q),d=sub(f2,f1);
+      const hx=Math.abs(d[0])>0.3,hy=Math.abs(d[1])>0.3;
+      say('bad',`Not C² yet: f″ at the start of Q is ${pf(f2)}, but it must be ${pf(f1)}. ${hx&&hy?'Both components are off.':hx?'The horizontal part is off.':'The vertical part is off.'}`);}
+    this.render();
+  },
+  hints:[
+    'C² adds one condition to C¹: f″ at the end of P equals f″ at the start of Q. First compute f″ at the end of P with 6(P₁ − 2P₂ + P₃).',
+    'Write f″ at the start of Q: 6(Q₀ − 2Q₁ + Q₂). Everything in it is known except Q₂. Set it equal to the vector from the first hint.',
+    'Divide both sides by 6: Q₀ − 2Q₁ + Q₂ = P₁ − 2P₂ + P₃. Compute the right side, then solve for Q₂ (do each coordinate separately).'
+  ],
+  formulas(){return `<div class="formula">second derivative at the start of a piece: f″(0) = 6(P<sub>0</sub> − 2P<sub>1</sub> + P<sub>2</sub>)<br>second derivative at the end of a piece: f″(1) = 6(P<sub>1</sub> − 2P<sub>2</sub> + P<sub>3</sub>)<br>C² at a join: f″ at the end of the first piece = f″ at the start of the next piece.<br>Do the x and y coordinates separately. The answer is a point, Q<sub>2</sub>.</div>`;}
+};
+
+/* ------------------------------------------------------------------ LEVEL 5: playground */
+const LP={short:'Playground',title:'Playground',noCheck:true,graph:true,T:3,pieces:null,sel:0,xr:false,tx:.5,st:null,fx:null,toast:null,colour:true,fitted:false,v:null,got:null,
+  setup(){
+    this.pieces=[clone(A3),clone(B4)];this.sel=0;this.xr=false;this.fitted=false;this.fx=null;this.toast=null;this.colour=true;this.got={m1:false,m2:false,m3:false,m4:false};this.am='f1';this.gm=1;
+    $('story').innerHTML=`<p class="goal">Free play. <b>Square dots are joins</b>: drag one to move the join with its handles. <b>Round dots are handles</b>: drag them to bend the track. At each join the <b style="color:var(--accent)">blue arrow</b> is the derivative just before the join and the <b style="color:var(--purple)">purple arrow</b> just after it. Press <b>Ride</b> to test.</p>
+      <details id="msd" ${innerWidth>700?'open':''}><summary><b>Missions</b></summary><div id="ms"></div></details>`;
+    const s=this;
+    const r2=newRow();
+    const add_=document.createElement('button');add_.className='btn';add_.textContent='Add a piece';
+    add_.onclick=()=>{const P=s.pieces[s.pieces.length-1],E=P[3],h=sub(P[3],P[2]);
+      const rot=(v,a)=>[v[0]*Math.cos(a)-v[1]*Math.sin(a),v[0]*Math.sin(a)+v[1]*Math.cos(a)];
+      const p1=add(E,mul(rot(h,1.1),0.6)),p2=add(p1,rot(h,-0.2)),p3=add(p2,rot(h,0.9));
+      s.pieces.push([E,p1,p2,p3].map(p=>[snap(p[0]),snap(p[1])]));s.fitted=false;s.render();};
+    const del_=document.createElement('button');del_.className='btn';del_.textContent='Remove last piece';
+    del_.onclick=()=>{if(s.pieces.length>1)s.pieces.pop();s.fitted=false;s.fx=null;s.render();};
+    const rst=document.createElement('button');rst.className='btn';rst.textContent='Reset';rst.onclick=()=>{s.fx=null;s.pieces=[clone(A3),clone(B4)];s.fitted=false;if(s.st){s.st.tau=0;s.st.prev=0;}s.render();};
+    r2.append(add_,del_,rst);
+    const r3=newRow();r3.innerHTML=`<label><input type="checkbox" id="cs" checked> Colour the track by speed</label><label><input type="checkbox" id="xo"> X-ray piece <select id="xs"></select></label><label>t <input type="range" id="xt" min="0" max="1" step="0.05" value="0.5"></label><label>Arrows at joins <select id="am"><option value="f1">f′</option><option value="f2">f″</option><option value="none">none</option></select></label><label>Graph <select id="gm"><option value="1">speed</option><option value="2">size of f″</option></select></label>`;
+    const r4=document.createElement('div');$('inputs').appendChild(r4);
+    this.st=rideControls(r4,()=>this.pieces,this.T,()=>{this.step();this.render();});
+    this.st.onEnd=()=>this.onEnd();
+    this.st.onStart=()=>{this.fx=null;this.toast=null;};
+    setTimeout(()=>{$('cs').onchange=e=>{this.colour=e.target.checked;this.render();};$('xo').onchange=e=>{this.xr=e.target.checked;this.render();};$('xt').oninput=e=>{this.tx=parseFloat(e.target.value);this.render();};$('xs').onchange=e=>{this.sel=parseInt(e.target.value);this.render();};$('am').onchange=e=>{this.am=e.target.value;this.render();};$('gm').onchange=e=>{this.gm=parseInt(e.target.value);this.render();};},0);
+  },
+  joins(){const J=[];for(let i=1;i<this.pieces.length;i++)J.push(i);return J;},
+  info(i){const p=this.pieces,inf=joinInfo(sub(p[i-1][3],p[i-1][2]),sub(p[i][1],p[i][0]));inf.c2=inf.c1&&len(sub(d2e(p[i-1]),d2s(p[i])))<=0.3;return inf;},
+  badge(inf){return inf.c2?['C²','ok']:joinBadge(inf);},
+  /* the train reaches the end of the track: go back to the start and keep riding */
+  onEnd(){
+    const n=this.pieces.length;
+    if(n>=4&&this.joins().every(i=>this.info(i).c1)){this.got.m3=true;this.toast={j:0,text:'lap complete ✓',cls:'lblg',until:performance.now()+1800};}
+    if(n>=3&&this.joins().every(i=>this.info(i).c2)){this.got.m4=true;this.toast={j:0,text:'lap complete ✓',cls:'lblg',until:performance.now()+1800};}
+    return true;
+  },
+  step(){
+    const st=this.st;if(!st)return;const prev=st.prev===undefined?0:st.prev;st.prev=st.tau;
+    if(!st.playing||this.fx)return;
+    const T=this.T;
+    for(const i of this.joins()){
+      if(prev<i*T&&st.tau>=i*T){
+        const inf=this.info(i),now=performance.now(),p=this.pieces;
+        if(!inf.g1){this.startFx(i);return;}
+        if(!inf.c1)this.toast={j:i,text:'Lurch! speed '+fmt(len(sub(p[i-1][3],p[i-1][2])))+' → '+fmt(len(sub(p[i][1],p[i][0]))),cls:'lblw',until:now+2200};
+        else this.toast={j:i,text:'smooth ✓',cls:'lblg',until:now+1200};
+        setTimeout(()=>{if(levels[cur]===LP)this.render();},2300);
+      }
+    }
+  },
+  startFx(j){
+    const st=this.st,pcs=this.pieces;st.playing=false;st.btn.textContent='▶ Ride';stopAnim();
+    const P=pcs[j-1];st.tau=j*this.T;
+    this.fx={j,pos:P[3],h:dbez(P,1),t0:performance.now(),dur:2200};
+    const s=this;const loop=()=>{if(levels[cur]!==LP||!s.fx)return;const u=(performance.now()-s.fx.t0)/s.fx.dur;
+      if(u>=1){s.fx=null;st.tau=0;st.prev=0;st.rng.value=0;s.render();return;}s.render();requestAnimationFrame(loop);};
+    requestAnimationFrame(loop);
+  },
+  drawFx(){
+    const f=this.fx,u=Math.min(1,(performance.now()-f.t0)/f.dur);
+    const x0=X(f.pos[0]),y0=Y(f.pos[1]);let d=[f.h[0],-f.h[1]];const L=Math.hypot(d[0],d[1])||1;d=[d[0]/L,d[1]/L];
+    const ang0=Math.atan2(d[1],d[0])*180/Math.PI;
+    const star=(cx,cy,r,col,op)=>{const pts=[];for(let k=0;k<16;k++){const a=k*Math.PI/8,rr=k%2?r*.5:r;pts.push((cx+Math.cos(a)*rr)+','+(cy+Math.sin(a)*rr));}
+      el('polygon',{points:pts.join(' '),fill:col,opacity:op,stroke:'var(--bad)','stroke-width':2});};
+    const word=(x,y,t,sz)=>el('text',{x,y,'text-anchor':'middle',style:`font-size:${sz}px;font-weight:800;fill:var(--warn);paint-order:stroke;stroke:var(--board);stroke-width:6px;stroke-linejoin:round`},board,t);
+    const drawTrain=(x,y,a)=>{const g=el('g',{transform:`translate(${x} ${y}) rotate(${a})`});
+      el('rect',{x:-17,y:-10,width:34,height:20,rx:6,class:'train'},g);el('polygon',{points:'17,-8 27,0 17,8',fill:'var(--warn)'},g);};
+    const w=Math.min(1,u/0.55),x=x0+d[0]*260*w,y=y0+d[1]*260*w-60*Math.sin(Math.PI*w);
+    if(u<0.55)drawTrain(x,y,ang0+540*w);
+    else{const b=(u-0.55)/0.45;star(x,y,14+40*b,'#ffd23f',1-b*0.7);}
+    el('circle',{cx:x0,cy:y0,r:16,fill:'none',stroke:'var(--bad)','stroke-width':4});
+    word(x0,y0-64,'OOPS!',38);
+    el('text',{x:x0,y:y0+46,class:'lblb','text-anchor':'middle'},board,'corner at this join');
+  },
+  fit(){const pcs=this.pieces;let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;
+    pcs.forEach(P=>P.forEach(p=>{mnx=Math.min(mnx,p[0]);mxx=Math.max(mxx,p[0]);mny=Math.min(mny,p[1]);mxy=Math.max(mxy,p[1]);}));
+    const w=Math.max(mxx-mnx+6,(mxy-mny+6)*W/H,14);this.v={cx:(mnx+mxx)/2,cy:(mny+mxy)/2,w:Math.ceil(w)};this.fitted=true;},
+  missions(){
+    const g=this.got,J=this.joins().map(i=>this.info(i));
+    if(J.some(i=>!i.g1))g.m1=true;
+    if(J.some(i=>i.g1&&!i.c1))g.m2=true;
+    const row=(ok,t)=>`<li style="list-style:none">${ok?'<b class="ok">✓</b>':'○'} ${t}</li>`;
+    $('ms').innerHTML=`<ul class="facts" style="padding-left:4px">${row(g.m1,'<b>Mission 1.</b> Make a <b>corner</b>: drag a handle next to a join so the blue and purple arrows there point in different directions. The train will derail.')}${row(g.m2,'<b>Mission 2.</b> Make a <b>G¹-only</b> join: the two arrows point the same way but have different lengths. Ride and watch the speed graph.')}${row(g.m3,'<b>Mission 3.</b> Build a track of <b>at least 4 pieces</b> where <b>every</b> join is C¹ (the arrows coincide), and ride it end to end.')}${row(g.m4,'<b>Mission 4.</b> Build a track of <b>at least 3 pieces</b> where <b>every</b> join is <b>C²</b>, and ride it end to end. Set <b>Arrows at joins</b> to f″: make a join C¹ first, then move the second handle of the next piece until the f″ arrows coincide.')}</ul>`;
+  },
+  render(){
+    const pcs=this.pieces,n=pcs.length;if(!this.fitted)this.fit();view=this.v;
+    clearBoard();drawGrid();this.missions();
+    const cls=['curve','curve2','curve3'];
+    pcs.forEach(P=>poly(P,'poly'));
+    let vmax=1;pcs.forEach(P=>{for(let k=0;k<=40;k++)vmax=Math.max(vmax,len(dbez(P,k/40))/this.T);});
+    pcs.forEach((P,i)=>{
+      if(this.colour){for(let k=0;k<40;k++){const a=bez(P,k/40),b=bez(P,(k+1)/40),v=len(dbez(P,(k+.5)/40))/this.T,fr=Math.min(1,v/vmax);
+        seg(a,b,'',{stroke:`rgb(${Math.round(47+(234-47)*fr)},${Math.round(91+(88-91)*fr)},${Math.round(234+(12-234)*fr)})`,'stroke-width':6,'stroke-linecap':'round'});}}
+      else path(P,cls[i%3]);});
+    if(this.xr){const P=pcs[Math.min(this.sel,n-1)],c=casteljau(P,this.tx);poly(c[1],'xr1');poly(c[2],'xr2');dot_(c[3][0],9,'train');label(c[3][0],pf(c[3][0]),0,-16,'lblg','middle');}
+    if(this.am!=='none'){const o=this.am==='f1';this.joins().forEach(i=>{const J=pcs[i][0],a=o?dbez(pcs[i-1],1):d2e(pcs[i-1]),b=o?dbez(pcs[i],0):d2s(pcs[i]),k=Math.min(o?.25:.12,5/Math.max(len(a),len(b),1e-9));
+      arrow(J,add(J,mul(a,k)),'var(--accent)',6);arrow(J,add(J,mul(b,k)),'var(--purple)',3.5);});}
+    /* train first, so the dots stay on top and can always be grabbed */
+    const tau=this.st?this.st.tau:0,T=this.T;let speed=0,tp=null;
+    if(!this.fx){trainOnTrack(pcs,tau,T);
+      const i=Math.max(0,Math.min(n-1,Math.floor(Math.max(0,tau)/T))),t=Math.min(1,Math.max(0,(Math.max(0,tau)-i*T)/T));speed=len(dbez(pcs[i],t))/T;tp=bez(pcs[i],t);}
+    else this.drawFx();
+    const sq=(pt,id,size)=>{const x=X(pt[0]),y=Y(pt[1]);el('rect',{x:x-size/2,y:y-size/2,width:size,height:size,rx:4,class:'hd','data-h':id});const m=MS()*5;el('rect',{x:x-size/2-m,y:y-size/2-m,width:size+2*m,height:size+2*m,class:'hit','data-h':id});};
+    const jl=[];
+    this.joins().forEach(i=>{const P=pcs[i],inf=this.info(i),[bt,bc]=this.badge(inf);
+      sq(P[0],i+':0',26);
+      if(!this.fx)label(P[0],bt,16,36,bc==='ok'?'lblg':bc==='mid'?'lblw':'lblb');
+      const hi=sub(pcs[i-1][3],pcs[i-1][2]),ho=sub(P[1],P[0]);jl.push(`<div>Join ${i}: <span class="${bc}">${bt}</span><br><span class="tiny">f′ before ${pf(dbez(pcs[i-1],1))}, after ${pf(dbez(P,0))} &nbsp;·&nbsp; f″ before ${pf(d2e(pcs[i-1]))}, after ${pf(d2s(P))}</span></div>`);});
+    sq(pcs[0][0],'0:0',20);sq(pcs[n-1][3],(n-1)+':3',20);
+    label(pcs[0][0],'start',-14,30,'lbl','end');label(pcs[n-1][3],'end',14,-16,'lbl');
+    pcs.forEach((P,i)=>{[1,2].forEach(k=>handle(i+':'+k,P[k]));});
+    if(tp&&!this.fx)label(tp,fmt(speed),0,-24,'lblg','middle');
+    const sx=$('xs');if(sx&&sx.options.length!==n){sx.innerHTML=pcs.map((_,i)=>`<option value="${i}">${i+1}</option>`).join('');sx.value=Math.min(this.sel,n-1);}
+    if(this.toast&&performance.now()<this.toast.until){const P=this.toast.j===0?pcs[0][0]:pcs[this.toast.j][0];label(P,this.toast.text,16,-20,this.toast.cls);}
+    if(this.st)this.st.rng.max=n*this.T;
+    speedGraph(pcs,tau,T,this.gm);
+    $('readout').innerHTML=`<div>Train speed now: <b>${fmt(speed)}</b> <span class="tiny">(length of the velocity vector per second: it changes along every piece, see the graph.)</span></div>`+(jl.join('')||'<div class="tiny">Add a piece to get a join.</div>');
+  },
+  moveEnd(i,k,p){const P=this.pieces[i],d=sub(p,P[k]);P[k]=p;const h=k===0?1:2;P[h]=add(P[h],d);},
+  onDrag(id,p){
+    const [i,k]=id.split(':').map(Number),pcs=this.pieces,n=pcs.length,P=pcs[i];
+    if(k===0||k===3){
+      this.moveEnd(i,k,p);
+      if(k===0&&i>0)this.moveEnd(i-1,3,p);
+      if(k===3&&i<n-1)this.moveEnd(i+1,0,p);
+      return;
+    }
+    P[k]=p;
+  }
+};
+
+const levels=[LD,L2,L3,L5,LP];
+buildSteps();go(0);
+</script>
+</body>
+</html>
