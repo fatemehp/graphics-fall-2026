@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CityLab Flythrough</title>
+<style>
+:root{
+  --bg:#f5f7fb; --card:#ffffff; --ink:#18213d; --muted:#5b6785; --line:#d9deea;
+  --accent:#2f5bea; --accent-soft:#e3eaff; --good:#15803d; --good-soft:#dcf5e5;
+  --warn:#c2410c; --warn-soft:#ffe9dc; --bad:#b91c1c; --bad-soft:#fde2e2;
+  --grid:#e6eaf3; --axis:#aab3c8; --board:#ffffff; --purple:#7c3aed; --teal:#0f766e;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1424; --card:#171d33; --ink:#e8ecf8; --muted:#9aa6c4; --line:#2a3354;
+    --accent:#7b9bff; --accent-soft:#222c54; --good:#5fd18a; --good-soft:#143524;
+    --warn:#ffa56b; --warn-soft:#3a2416; --bad:#ff8b8b; --bad-soft:#3d1a1a;
+    --grid:#222a47; --axis:#4a557c; --board:#121830; --purple:#b69cff; --teal:#4fd1c5;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{padding:18px 20px 6px;max-width:1280px;margin:0 auto}
+h1{margin:0;font-size:26px;letter-spacing:-.01em}
+.sub{margin:2px 0 12px;color:var(--muted)}
+#steps{display:flex;flex-wrap:wrap;gap:8px}
+#steps button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer}
+#steps button.cur{background:var(--accent);border-color:var(--accent);color:#fff}
+#steps button.done::after{content:" ✓";color:var(--good);font-weight:700}
+#steps button.cur.done::after{color:#fff}
+main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);gap:16px;max-width:1280px;margin:0 auto;padding:10px 20px 30px}
+@media (max-width:980px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+#boardwrap{padding:8px}
+svg{display:block;width:100%;height:auto}
+#board{background:var(--board);border-radius:10px;touch-action:none;user-select:none}
+#graph{margin-top:8px;background:var(--board);border-radius:10px}
+#panel h2{margin:0 0 4px;font-size:21px}
+#panel .goal{margin:0 0 8px;font-size:16px}
+.formula{background:var(--accent-soft);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:15px;overflow-x:auto}
+.facts{margin:8px 0;padding-left:20px}
+.facts li{margin:3px 0}
+.row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:8px 0}
+.row label{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:15px;max-width:100%}
+.row select{max-width:100%}
+input[type=number]{width:84px;font:inherit;font-size:16px;padding:5px 7px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+input[type=range]{width:200px}
+select{font:inherit;font-size:15px;padding:4px 6px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.btn{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:7px 14px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.on{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+.btn:disabled{opacity:.45;cursor:default}
+.readout{font-size:15px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0}
+.readout div{margin:2px 0}
+.ok{color:var(--good);font-weight:600}.no{color:var(--bad);font-weight:600}.mid{color:var(--warn);font-weight:600}
+#fb{margin:8px 0;padding:0}
+#fb .msg{border-radius:10px;padding:9px 12px;font-size:15.5px}
+#fb .good{background:var(--good-soft);color:var(--good)}
+#fb .bad{background:var(--bad-soft);color:var(--bad)}
+#fb .info{background:var(--warn-soft);color:var(--warn)}
+#hints,#working,#note{margin:8px 0}
+#hints .hh{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--muted)}
+.btn.small{padding:2px 10px;font-size:13px}
+.mine{stroke:var(--purple);stroke-width:3.5;stroke-dasharray:9 6;fill:none}
+#hints .h{background:var(--warn-soft);border-radius:10px;padding:7px 12px;margin:6px 0;font-size:15px}
+#working .w{background:var(--accent-soft);border-radius:10px;padding:8px 12px;font-size:15px}
+#note .n{border-left:4px solid var(--good);padding:4px 12px;font-size:15.5px;background:var(--good-soft);border-radius:0 10px 10px 0}
+#working ol{margin:4px 0;padding-left:20px}
+sub{font-size:.75em}
+/* svg */
+.grid{stroke:var(--grid);stroke-width:1}
+.axis{stroke:var(--axis);stroke-width:1.6}
+.tick{fill:var(--muted);font-size:13px}
+.poly{stroke:var(--muted);stroke-width:1.6;stroke-dasharray:6 5;fill:none}
+.curve{stroke:var(--accent);stroke-width:4.5;fill:none;stroke-linecap:round}
+.curve2{stroke:var(--purple);stroke-width:4.5;fill:none;stroke-linecap:round}
+.curve3{stroke:var(--teal);stroke-width:4.5;fill:none;stroke-linecap:round}
+.ghost{stroke:var(--muted);stroke-width:2;fill:none;opacity:.55}
+.cp{fill:var(--ink)}
+.hd{fill:var(--warn);stroke:var(--card);stroke-width:2.5;cursor:grab}
+.hit{fill:transparent;cursor:grab}
+.lbl{fill:var(--ink);font-size:17px;font-weight:600;paint-order:stroke;stroke:var(--board);stroke-width:4px;stroke-linejoin:round}
+.lblm{fill:var(--muted);font-size:15px;paint-order:stroke;stroke:var(--board);stroke-width:4px;stroke-linejoin:round}
+.lblg{fill:var(--good);font-size:17px;font-weight:700;paint-order:stroke;stroke:var(--board);stroke-width:4px;stroke-linejoin:round}
+.lblw{fill:var(--warn);font-size:17px;font-weight:700;paint-order:stroke;stroke:var(--board);stroke-width:4px;stroke-linejoin:round}
+.lblb{fill:var(--bad);font-size:17px;font-weight:700;paint-order:stroke;stroke:var(--board);stroke-width:4px;stroke-linejoin:round}
+.gate{fill:none;stroke:var(--warn);stroke-width:3.5}
+.guess{fill:none;stroke:var(--bad);stroke-width:3.5}
+.train{fill:var(--accent);stroke:var(--card);stroke-width:2.5}
+.xr1{stroke:#ea580c;stroke-width:2.5;fill:none}
+.xr2{stroke:#16a34a;stroke-width:2.5;fill:none}
+.xr3{stroke:#9333ea;stroke-width:3;fill:none}
+.chord{stroke:var(--bad);stroke-width:3.5;fill:none}
+.spd{stroke:var(--accent);stroke-width:3;fill:none}
+.sel{stroke-width:6}
+.tiny{font-size:13px;color:var(--muted)}
+details>summary{cursor:pointer;margin:4px 0}
+@media (max-width:700px){
+  header{padding:14px 14px 4px} h1{font-size:22px} main{padding:8px 12px 24px;gap:12px}
+  .card{padding:12px}
+  .tick{font-size:21px}.lbl,.lblg,.lblw,.lblb{font-size:25px;stroke-width:6px}.lblm{font-size:21px;stroke-width:6px}
+  .btn{padding:10px 16px}
+  input[type=range]{width:min(200px,60vw)}
+}
+
+/* ---- additions for the flythrough page ---- */
+#steps{align-items:center}
+#steps .grp{font-size:13px;color:var(--muted);margin:0 2px 0 8px;text-transform:uppercase;letter-spacing:.06em}
+#steps .grp:first-child{margin-left:0}
+#steps button .st{color:var(--warn);letter-spacing:1px;font-size:12px;margin-left:4px}
+#steps button.cur .st{color:#fff}
+.seg{stroke-width:4.5;fill:none;stroke-linecap:round}
+.seg.ok{stroke:var(--accent)}
+.seg.moved{stroke:var(--bad)}
+.seg.cr{stroke:var(--accent)}
+.seg.bs{stroke:var(--purple)}
+.seg.out{stroke:var(--bad)}
+.knot{fill:var(--card);stroke:var(--muted);stroke-width:2}
+.gate.ok{stroke:var(--good)}
+.gatefill{fill:var(--warn-soft);opacity:.55}
+.gatefill.ok{fill:var(--good-soft)}
+.wall{fill:var(--bad-soft);stroke:var(--bad);stroke-width:2.5}
+.band{fill:var(--good-soft);opacity:.55;stroke:none}
+.lock{fill:var(--muted);stroke:var(--card);stroke-width:2}
+.miss{stroke:var(--bad);stroke-width:3;stroke-dasharray:4 3}
+.head{stroke:var(--muted);stroke-width:2;stroke-dasharray:8 6;fill:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.bar{height:14px;border-radius:7px;background:var(--grid);position:relative;overflow:hidden;margin:4px 0 2px}
+.bar>i{position:absolute;left:0;top:0;bottom:0;background:var(--accent)}
+.bar>i.over{background:var(--bad)}
+.bar>b{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--ink)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;margin:6px 0;color:var(--muted)}
+.legend i{display:inline-block;width:22px;height:5px;border-radius:3px;vertical-align:middle;margin-right:6px}
+.tiny b{color:var(--ink)}
+@media (max-width:700px){
+  #steps button{padding:8px 12px}
+  #steps .grp{display:none}
+}
+.step{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 4px}
+#ride{margin:0 0 10px}
+.rides{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rides figure{margin:0}
+.rides canvas{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--grid)}
+.rides figcaption{font-weight:700;font-size:15px;margin-top:2px}
+.transport{display:flex;gap:8px;align-items:center;margin:8px 0 0}
+.transport input[type=range]{flex:1}
+.transport select{font-size:15px;padding:4px}
+.mh{font-size:15px;margin:10px 0 4px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.mlist{display:flex;flex-direction:column;gap:6px}
+.mlist .mrow{text-align:left;display:flex;gap:8px;align-items:center}
+.mlist .mrow .cb{font-size:18px;line-height:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>CityLab Flythrough</h1>
+  <p class="sub">Design the camera path through the city. Three short activities, then the City ride playground with missions. No timer: drag, check, and see what happens.</p>
+  <nav id="steps"></nav>
+  <p class="tiny" style="margin:8px 0 0"><button class="btn" id="bReset" style="padding:2px 8px;font-size:12px">Clear progress</button></p>
+</header>
+<main>
+  <section class="card" id="boardwrap">
+    <div id="ride" style="display:none"></div>
+    <svg id="board" viewBox="0 0 760 560" role="img" aria-label="Camera path drawing board"></svg>
+    <svg id="graph" viewBox="0 0 760 170" style="display:none" role="img" aria-label="Strip plot under the board"></svg>
+  </section>
+  <aside class="card" id="panel">
+    <h2 id="title"></h2>
+    <div id="story"></div>
+    <div id="inputs"></div>
+    <div id="readout"></div>
+    <div id="fb"></div>
+    <div class="btns" id="btns">
+      <button class="btn primary" id="bCheck">Check</button>
+      <button class="btn" id="bHint">Hint</button>
+      <button class="btn" id="bWork">Formulas</button>
+      <button class="btn" id="bNext" style="display:none">Next →</button>
+    </div>
+    <div id="hints"></div>
+    <div id="working"></div>
+    <div id="note"></div>
+  </aside>
+</main>
+<script>
+/* ---------------------------------------------------------------- pure math (no DOM) */
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1]], sub=(a,b)=>[a[0]-b[0],a[1]-b[1]], mul=(a,k)=>[a[0]*k,a[1]*k];
+const len=a=>Math.hypot(a[0],a[1]), lerp=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1], cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
+const clone=P=>P.map(p=>p.slice());
+function bez(P,t){const u=1-t;return [0,1].map(i=>u*u*u*P[0][i]+3*t*u*u*P[1][i]+3*t*t*u*P[2][i]+t*t*t*P[3][i]);}
+function dbez(P,t){const u=1-t;return [0,1].map(i=>3*u*u*(P[1][i]-P[0][i])+6*u*t*(P[2][i]-P[1][i])+3*t*t*(P[3][i]-P[2][i]));}
+function d2bez(P,t){return [0,1].map(i=>(6-6*t)*P[0][i]+(-12+18*t)*P[1][i]+(6-18*t)*P[2][i]+6*t*P[3][i]);}
+/* one Bezier curve of any degree by de Casteljau */
+function bezN(P,t){let Q=P;while(Q.length>1){const R=[];for(let i=0;i<Q.length-1;i++)R.push(lerp(Q[i],Q[i+1],t));Q=R;}return Q[0];}
+/* Hermite piece -> Bezier points */
+function hermiteSeg(p0,d0,p1,d1){return [p0,add(p0,mul(d0,1/3)),sub(p1,mul(d1,1/3)),p1];}
+/* Catmull-Rom / cardinal: tangent d_k = 1/2 (1-t) (p_{k+1} - p_{k-1}) */
+function cardTan(pm,pp,ten){return mul(sub(pp,pm),0.5*(1-ten));}
+function segsCR(p,ten,closed){
+  const n=p.length,S=[],at=i=>p[((i%n)+n)%n];
+  const lo=closed?0:1,hi=closed?n-1:n-3;
+  for(let k=lo;k<=hi;k++){
+    const a=at(k-1),b=at(k),c=at(k+1),d=at(k+2);
+    S.push(hermiteSeg(b,cardTan(a,c,ten),c,cardTan(b,d,ten)));
+  }
+  return S;
+}
+/* uniform cubic B-spline segment as a Bezier piece */
+function bsBez(P0,P1,P2,P3){
+  const f=(a,b,c,d,w)=>[0,1].map(i=>(w[0]*a[i]+w[1]*b[i]+w[2]*c[i]+w[3]*d[i]));
+  return [f(P0,P1,P2,P3,[1/6,4/6,1/6,0]),f(P0,P1,P2,P3,[0,2/3,1/3,0]),f(P0,P1,P2,P3,[0,1/3,2/3,0]),f(P0,P1,P2,P3,[0,1/6,4/6,1/6])];
+}
+function segsBS(p,closed){
+  const n=p.length,S=[],at=i=>p[((i%n)+n)%n],m=closed?n:n-3;
+  for(let j=0;j<m;j++)S.push(bsBez(at(j),at(j+1),at(j+2),at(j+3)));
+  return S;
+}
+function segsChain(p){const S=[];for(let j=0;j+3<p.length;j+=3)S.push([p[j].slice(),p[j+1].slice(),p[j+2].slice(),p[j+3].slice()]);return S;}
+/* B-spline weights at u (sum to 1) */
+const bsW=u=>[(1-u)**3/6,(3*u**3-6*u*u+4)/6,(-3*u**3+3*u*u+3*u+1)/6,u**3/6];
+/* sample a list of Bezier pieces: returns [{seg,t,pt}] */
+function sampleSegs(S,per){const out=[];S.forEach((P,i)=>{for(let k=0;k<=per;k++){const t=k/per;out.push({seg:i,t,pt:bez(P,t)});}});return out;}
+function sampleHigh(p,N){const out=[];for(let k=0;k<=N;k++){const t=k/N;out.push({seg:0,t,pt:bezN(p,t)});}return out;}
+/* min distance from curve samples to a centre */
+function minDist(samples,c){let m=1e9;for(const s of samples){const d=len(sub(s.pt,c));if(d<m)m=d;}return m;}
+/* size of the jump in f'' at each interior join */
+function jumps(S){const J=[];for(let i=1;i<S.length;i++){J.push(len(sub(d2bez(S[i-1],1),d2bez(S[i],0))));}return J;}
+function d1jumps(S){const J=[];for(let i=1;i<S.length;i++){J.push(len(sub(dbez(S[i-1],1),dbez(S[i],0))));}return J;}
+function polylineLen(pts){let L=0;for(let i=1;i<pts.length;i++)L+=len(sub(pts[i],pts[i-1]));return L;}
+/* fraction of route (by length) that moved more than tol, comparing sample by sample */
+function movedFraction(oldS,newS,tol){
+  let tot=0,mv=0;
+  for(let i=1;i<oldS.length;i++){
+    const w=len(sub(oldS[i].pt,oldS[i-1].pt));tot+=w;
+    const d=Math.max(len(sub(oldS[i].pt,newS[i].pt)),len(sub(oldS[i-1].pt,newS[i-1].pt)));
+    if(d>tol)mv+=w;
+  }
+  return tot>0?mv/tot:0;
+}
+function segsMoved(oldS,newS,tol){
+  const per=oldS.length/ (1); // not used
+  return 0;
+}
+if(false)module.exports={add,sub,mul,len,lerp,dot,cross,clone,bez,dbez,d2bez,bezN,hermiteSeg,cardTan,segsCR,bsBez,segsBS,segsChain,bsW,sampleSegs,sampleHigh,minDist,jumps,d1jumps,polylineLen,movedFraction};
+
+'use strict';
+/* ------------------------------------------------------------------ helpers */
+const NS='http://www.w3.org/2000/svg', W=760, H=560;
+const board=document.getElementById('board'), graph=document.getElementById('graph');
+const $=id=>document.getElementById(id);
+const fmt=n=>{const r=Math.round(n*1000)/1000;return (Object.is(r,-0)?0:r).toString()};
+const f1=n=>(Math.round(n*100)/100).toString();
+const pf=p=>'('+fmt(p[0])+', '+fmt(p[1])+')';
+const snapv=(v,s)=>Math.round(v/s)*s;
+const deg=r=>r*180/Math.PI;
+function el(tag,attrs,parent,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!==undefined)e.textContent=text;(parent||board).appendChild(e);return e;}
+
+let view={cx:6,cy:3,w:14};
+const vh=()=>view.w*H/W;
+const X=x=>(x-(view.cx-view.w/2))/view.w*W;
+const Y=y=>H-(y-(view.cy-vh()/2))/vh()*H;
+const WX=px=>px/W*view.w+(view.cx-view.w/2);
+const WY=py=>(H-py)/H*vh()+(view.cy-vh()/2);
+const PX=r=>r/view.w*W;                       /* world length -> pixels */
+const MS=()=>(window.matchMedia&&window.matchMedia('(max-width:700px)').matches)?1.7:1;
+
+function clearBoard(){while(board.firstChild)board.removeChild(board.firstChild);}
+function drawGrid(){
+  const x0=view.cx-view.w/2,x1=view.cx+view.w/2,h=vh(),y0=view.cy-h/2,y1=view.cy+h/2;
+  const step=view.w>16?2:1;
+  for(let x=Math.ceil(x0);x<=x1;x++){ if(x%step)continue; el('line',{x1:X(x),y1:0,x2:X(x),y2:H,class:x===0?'axis':'grid'});
+    el('text',{x:X(x)+3,y:H-6,class:'tick'},board,String(x)); }
+  for(let y=Math.ceil(y0);y<=y1;y++){ if(y%step)continue; el('line',{x1:0,y1:Y(y),x2:W,y2:Y(y),class:y===0?'axis':'grid'});
+    el('text',{x:4,y:Y(y)-4,class:'tick'},board,String(y)); }
+}
+function segPath(P,cls){return el('path',{d:`M${X(P[0][0])} ${Y(P[0][1])} C${X(P[1][0])} ${Y(P[1][1])}, ${X(P[2][0])} ${Y(P[2][1])}, ${X(P[3][0])} ${Y(P[3][1])}`,class:cls});}
+function polyline(pts,cls){return el('polyline',{points:pts.map(p=>X(p[0])+','+Y(p[1])).join(' '),class:cls});}
+function seg(a,b,cls,extra){return el('line',Object.assign({x1:X(a[0]),y1:Y(a[1]),x2:X(b[0]),y2:Y(b[1]),class:cls},extra||{}));}
+function dotAt(p,r,cls){return el('circle',{cx:X(p[0]),cy:Y(p[1]),r:r,class:cls});}
+function label(p,txt,dx,dy,cls,anchor){
+  const t=el('text',{x:X(p[0])+(dx||0),y:Y(p[1])+(dy||0),class:cls||'lbl','text-anchor':anchor||'start'},board);
+  const re=/_\{([^}]*)\}|_([A-Za-z0-9])/g;let last=0,m,afterSub=false;
+  const plain=str=>{if(!str)return;const a={};if(afterSub){a.dy='-0.252em';afterSub=false;}el('tspan',a,t,str);};
+  while((m=re.exec(txt))){plain(txt.slice(last,m.index));el('tspan',{'font-size':'0.72em',dy:'0.35em'},t,m[1]!==undefined?m[1]:m[2]);afterSub=true;last=re.lastIndex;}
+  plain(txt.slice(last));return t;
+}
+function cameraIcon(p,angDeg,color,coneLen){
+  const L=(coneLen||70)*Math.min(MS(),1.4),k=Math.tan(22*Math.PI/180)*L;
+  const g=el('g',{transform:`translate(${X(p[0])} ${Y(p[1])}) rotate(${-angDeg})`});
+  el('polygon',{points:`10,0 ${L},${-k} ${L},${k}`,fill:color,opacity:0.18},g);
+  el('line',{x1:10,y1:0,x2:L,y2:-k,stroke:color,'stroke-width':1.5,opacity:0.5},g);el('line',{x1:10,y1:0,x2:L,y2:k,stroke:color,'stroke-width':1.5,opacity:0.5},g);
+  el('rect',{x:-14,y:-9,width:24,height:18,rx:3,fill:color},g);
+  el('polygon',{points:'10,-5 20,-10 20,10 10,5',fill:color},g);
+  el('circle',{cx:-3,cy:0,r:4,fill:'#fff'},g);
+}
+function handle(id,p){const m=MS();el('circle',{cx:X(p[0]),cy:Y(p[1]),r:11*Math.min(m,1.35),class:'hd','data-h':id});el('circle',{cx:X(p[0]),cy:Y(p[1]),r:23*m,class:'hit','data-h':id});}
+function lockedPt(p){el('rect',{x:X(p[0])-8,y:Y(p[1])-8,width:16,height:16,rx:3,class:'lock'});}
+function arrow(a,b,color,width){
+  const A=[X(a[0]),Y(a[1])],B=[X(b[0]),Y(b[1])],d=[B[0]-A[0],B[1]-A[1]],L=Math.hypot(d[0],d[1]); if(L<2)return;
+  const u=[d[0]/L,d[1]/L],n=[-u[1],u[0]],s=11;
+  el('line',{x1:A[0],y1:A[1],x2:B[0]-u[0]*s*.6,y2:B[1]-u[1]*s*.6,stroke:color,'stroke-width':width||3.5,'stroke-linecap':'round'});
+  el('polygon',{points:`${B[0]},${B[1]} ${B[0]-u[0]*s*1.4+n[0]*s*.6},${B[1]-u[1]*s*1.4+n[1]*s*.6} ${B[0]-u[0]*s*1.4-n[0]*s*.6},${B[1]-u[1]*s*1.4-n[1]*s*.6}`,fill:color});
+}
+function gate(c,r,ok,name){
+  el('circle',{cx:X(c[0]),cy:Y(c[1]),r:PX(r),class:'gatefill'+(ok?' ok':'')});
+  el('circle',{cx:X(c[0]),cy:Y(c[1]),r:PX(r),class:'gate'+(ok?' ok':'')});
+  if(name)label(c,name,0,-PX(r)-9,ok?'lblg':'lblw','middle');
+}
+function drawSegs(S,cls,flags){S.forEach((P,i)=>segPath(P,'seg '+(flags&&flags[i]!==undefined?flags[i]:cls)));}
+function drawKnots(S){S.forEach((P,i)=>{if(i>0)dotAt(P[0],5,'knot');});}
+function drawPolygon(pts,closed){const q=closed?pts.concat([pts[0]]):pts;polyline(q,'poly');}
+function drawPts(pts,prefix,locked){pts.forEach((p,i)=>{if(locked&&locked(i))lockedPt(p);else handle(prefix+i,p);});}
+function ptLabels(pts,fn,dx,dy){pts.forEach((p,i)=>label(p,fn(i),dx===undefined?10:dx,dy===undefined?-12:dy,'lblm'));}
+
+/* ------------------------------------------------------------------ strip under the board */
+function niceStep(v){const k=Math.pow(10,Math.floor(Math.log10(v/4)));const r=(v/4)/k;return (r<=1?1:r<=2?2:r<=5?5:10)*k;}
+function strip(S,o){
+  while(graph.firstChild)graph.removeChild(graph.firstChild);
+  const n=S.length,L=56,R=748,top=14,bot=140; if(!n)return;
+  const vec=o.order===1?dbez:d2bez;
+  let vmax=o.ymax||0;const curves=[];
+  S.forEach((P,i)=>{const pts=[];for(let k=0;k<=60;k++){const t=k/60,v=len(vec(P,t));pts.push([i+t,v]);if(!o.ymax)vmax=Math.max(vmax,v);}curves.push(pts);});
+  vmax=o.ymax||Math.max(1,Math.ceil(vmax*1.15));
+  const gx=s=>L+(s/n)*(R-L),gy=v=>bot-(Math.min(v,vmax)/vmax)*(bot-top);
+  el('line',{x1:L,y1:bot,x2:R,y2:bot,class:'axis'},graph);el('line',{x1:L,y1:top,x2:L,y2:bot,class:'axis'},graph);
+  el('text',{x:R,y:top+4,class:'tick','text-anchor':'end'},graph,o.name);el('text',{x:R,y:bot+22,class:'tick','text-anchor':'end'},graph,'time →');
+  const st=niceStep(vmax);for(let v=0;v<=vmax+1e-9;v+=st){el('line',{x1:L,y1:gy(v),x2:R,y2:gy(v),class:'grid'},graph);el('text',{x:L-8,y:gy(v)+5,class:'tick','text-anchor':'end'},graph,fmt(v));}
+  for(let i=1;i<n;i++){el('line',{x1:gx(i),y1:top,x2:gx(i),y2:bot,stroke:'var(--muted)','stroke-dasharray':'4 4','stroke-width':1.2},graph);}
+  curves.forEach(pts=>el('polyline',{points:pts.map(s=>gx(s[0])+','+gy(s[1])).join(' '),class:'spd'},graph));
+  if(o.order===2){for(let i=1;i<n;i++){const a=d2bez(S[i-1],1),b=d2bez(S[i],0);if(len(sub(a,b))>o.tol){el('line',{x1:gx(i),y1:gy(len(a)),x2:gx(i),y2:gy(len(b)),stroke:'var(--bad)','stroke-width':3.5},graph);}}}
+  if(o.line!==undefined){el('line',{x1:L,y1:gy(o.line),x2:R,y2:gy(o.line),stroke:'var(--bad)','stroke-width':2.5,'stroke-dasharray':'8 5'},graph);el('text',{x:L+6,y:gy(o.line)-6,class:'tick',style:'fill:var(--bad)'},graph,o.lineName);}
+}
+
+/* ------------------------------------------------------------------ progress, panel plumbing */
+const KEY='flythrough.v1';
+let cur=0, prog={};
+try{prog=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){prog={};}
+function saveProg(){try{localStorage.setItem(KEY,JSON.stringify(prog));}catch(e){}}
+let hintsShown=0, drag=null, hintsHidden=false;
+function say(kind,html){ $('fb').innerHTML=html?`<div class="msg ${kind}">${html}</div>`:''; }
+function newRow(){const r=document.createElement('div');r.className='row';$('inputs').appendChild(r);return r;}
+function btn(parent,text,cls,fn){const b=document.createElement('button');b.className='btn'+(cls?' '+cls:'');b.textContent=text;b.onclick=fn;parent.appendChild(b);return b;}
+function sliderRow(parent,labelHtml,min,max,step,val,onInput){
+  const row=document.createElement('div');row.className='row';const l=document.createElement('label');l.innerHTML='<span>'+labelHtml+'</span>';
+  const inp=document.createElement('input');inp.type='range';inp.min=min;inp.max=max;inp.step=step;inp.value=val;
+  const out=document.createElement('b');out.textContent=val;
+  inp.addEventListener('input',()=>{out.textContent=fmt(parseFloat(inp.value));onInput(parseFloat(inp.value));});
+  l.appendChild(inp);l.appendChild(out);row.appendChild(l);parent.appendChild(row);return inp;
+}
+function stars(i){const s=prog['s'+i];return s?'<span class="st">'+'★'.repeat(s)+'</span>':'';}
+function buildSteps(){
+  const nav=$('steps');nav.innerHTML='';
+  levels.forEach((L,i)=>{
+    if(L.group){const g=document.createElement('span');g.className='grp';g.textContent=L.group;nav.appendChild(g);}
+    const b=document.createElement('button');b.innerHTML=(i+1)+'. '+L.short+(L.mission?stars(i):'');
+    b.className=(i===cur?'cur ':'')+((!L.mission&&prog['d'+i])?'done':'');b.onclick=()=>go(i);nav.appendChild(b);
+  });
+}
+function go(i){
+  cur=i;hintsShown=0;hintsHidden=false;
+  if(typeof stopRide==='function')stopRide();
+  ['story','inputs','readout','fb','hints','working','note','ride'].forEach(k=>$(k).innerHTML='');
+  $('ride').style.display='none';
+  const L=levels[i];
+  $('title').textContent=(i+1)+'. '+L.title;
+  $('story').innerHTML=L.story||'';
+  $('bWork').textContent='Formulas';
+  $('bNext').style.display='none';$('bCheck').style.display=L.noCheck?'none':'';
+  $('bHint').style.display=L.hints&&L.hints.length?'':'none';
+  $('bWork').style.display=L.formulas?'':'none';
+  graph.style.display=L.graph?'':'none';
+  L.setup();buildSteps();L.render();
+}
+function pass(noteHtml){
+  const L=levels[cur];
+  if(L.mission){const s=hintsShown===0?3:hintsShown<=1?2:1;prog['s'+cur]=Math.max(prog['s'+cur]||0,s);}else prog['d'+cur]=1;
+  saveProg();buildSteps();
+  if(noteHtml)$('note').innerHTML=`<div class="n">${noteHtml}</div>`;
+  if(cur<levels.length-1)$('bNext').style.display='';
+}
+$('bCheck').onclick=()=>levels[cur].check();
+$('bNext').onclick=()=>go(cur+1);
+$('bReset').onclick=()=>{prog={};saveProg();buildSteps();};
+function renderHints(){
+  const H_=levels[cur].hints,box=$('hints');box.innerHTML='';if(hintsShown===0)return;
+  const head=document.createElement('div');head.className='hh';
+  head.innerHTML=`<span><b>Hints</b> (${hintsShown} of ${H_.length})</span>`;
+  const t=document.createElement('button');t.className='btn small';t.textContent=hintsHidden?'Show':'Hide';
+  t.onclick=()=>{hintsHidden=!hintsHidden;renderHints();};head.appendChild(t);box.appendChild(head);
+  if(hintsHidden)return;
+  for(let i=0;i<hintsShown;i++){const d=document.createElement('div');d.className='h';d.innerHTML=`<b>${i+1}.</b> `+H_[i];box.appendChild(d);}
+}
+$('bHint').onclick=()=>{const H_=levels[cur].hints;
+  if(hintsHidden&&hintsShown>0){hintsHidden=false;renderHints();return;}
+  if(hintsShown<H_.length){hintsShown++;hintsHidden=false;renderHints();}else{say('info','No more hints. Check the formulas, or ask your instructor.');}};
+$('bWork').onclick=()=>{const w=$('working');if(w.innerHTML){w.innerHTML='';$('bWork').textContent='Formulas';}else{w.innerHTML=levels[cur].formulas();$('bWork').textContent='Hide formulas';}};
+
+/* dragging */
+function evWorld(e){const r=board.getBoundingClientRect();return [WX((e.clientX-r.left)/r.width*W),WY((e.clientY-r.top)/r.height*H)];}
+board.addEventListener('pointerdown',e=>{
+  const t=e.target.closest('[data-h]'),L=levels[cur];
+  if(!t){if(L.onTap){L.onTap(evWorld(e),null);L.render();e.preventDefault();}return;}
+  if(L.onHandleTap&&L.onHandleTap(t.getAttribute('data-h'))){L.render();e.preventDefault();return;}
+  drag={id:t.getAttribute('data-h')};e.preventDefault();});
+window.addEventListener('pointermove',e=>{
+  if(!drag)return;const r=board.getBoundingClientRect();
+  const sn=levels[cur].snapTo||0.1;
+  const p=[snapv(WX((e.clientX-r.left)/r.width*W),sn),snapv(WY((e.clientY-r.top)/r.height*H),sn)];
+  levels[cur].onDrag(drag.id,p);levels[cur].render();
+});
+window.addEventListener('pointerup',()=>{drag=null;});
+window.addEventListener('pointercancel',()=>{drag=null;});
+
+/* ------------------------------------------------------------------ route helpers shared by the levels */
+function routeOf(scheme,pts,o){
+  o=o||{};
+  if(scheme==='high')return {S:[],high:true,samples:sampleHigh(pts,500)};
+  const S=scheme==='cr'?segsCR(pts,o.ten||0,o.closed):scheme==='bs'?segsBS(pts,o.closed):segsChain(pts);
+  return {S,high:false,samples:sampleSegs(S,50)};
+}
+function drawRoute(r,cls,flags){
+  if(r.high)polyline(r.samples.map(s=>s.pt),'seg '+(flags&&flags[0]!==undefined?flags[0]:cls));
+  else{drawSegs(r.S,cls,flags);}
+}
+function chainBase(p){const q=clone(p);for(const j of [3,6,9]){if(j+1>=p.length)continue;const m=mul(sub(p[j+1],p[j-1]),0.5);q[j-1]=sub(p[j],m);q[j+1]=add(p[j],m);}return q;}
+const SCHEME_NAME={high:'one high-degree Bézier',chain:'Bézier chain',cr:'Catmull–Rom',bs:'B-spline'};
+function schemeButtons(parent,list,get,set){
+  const row=document.createElement('div');row.className='chips';parent.appendChild(row);
+  const bs=[];list.forEach(k=>{const b=btn(row,SCHEME_NAME[k][0].toUpperCase()+SCHEME_NAME[k].slice(1),get()===k?'on':'',()=>{set(k);bs.forEach((x,i)=>x.classList.toggle('on',list[i]===k));});bs.push(b);});
+}
+function joinKind(S){ /* worst corner among the joins: 'c1', or index of first corner */
+  const J=d1jumps(S);for(let i=0;i<J.length;i++)if(J[i]>0.05)return i+1;return 0;
+}
+
+/* ================================================================== LEVELS */
+let levels=[];
+const A1={},A2={},A3={},CITY={};
+
+
+/* ---------------------------------------------------------------- 1. Hermite: arrive with the right heading */
+const pk=[0,0],pk1=[6,0],pk2=[12,0],dArr=[3,-3],dEnd=[6,-3],monument=[3,1.125],R1=0.15;
+const HINTS_A1_1=['Look at the route: does it pass above or below the monument? The arrow d<sub>k</sub> decides how far the camera keeps its heading before it turns.','A longer d<sub>k</sub> keeps the camera on its heading for longer, so the route bulges more.','Put u = ½ in the Hermite formula: f(½) = (p<sub>k</sub> + p<sub>k+1</sub>)/2 + (d<sub>k</sub> − d<sub>k+1</sub>)/8. The monument has y = 1.125, so with d<sub>k</sub> = (a, 2a) the y-part (2a + 3)/8 must equal 1.125. Try d<sub>k</sub> = (3, 6).'];
+const HINTS_A1_2=['The camera arrives at p<sub>k+1</sub> with d<sub>k+1</sub> = (3, −3). What should the next piece start with?','The gray arrow is the one the camera arrives with. Put the orange arrow on top of it.','For a smooth join the leaving arrow equals the arriving arrow: d′ = (3, −3).'];
+function a1d0(){return [A1.a,2*A1.a];}
+function a1piece1(){return hermiteSeg(pk,a1d0(),pk1,dArr);}
+function a1piece2(){return hermiteSeg(pk1,A1.d2,pk2,dEnd);}
+levels.push({
+  short:'Heading',title:'Arrive with the right heading',group:'Activities',snapTo:0.5,
+  hints:HINTS_A1_1,
+  story:'',
+  formulas(){return `<div class="w">Hermite formula at u = ½:<div class="formula">f(½) = (p<sub>k</sub> + p<sub>k+1</sub>)/2 + (d<sub>k</sub> − d<sub>k+1</sub>)/8</div>With p<sub>k</sub> = (0, 0), p<sub>k+1</sub> = (6, 0) and d<sub>k+1</sub> = (3, −3), the y-part is (2a + 3)/8 when d<sub>k</sub> = (a, 2a). The monument is at y = 1.125, so a = 3 and d<sub>k</sub> = (3, 6).</div>`;},
+  setup(){levels[0].hints=HINTS_A1_1;A1.a=1.5;A1.part=1;A1.d2=[1.5,1.5];view={cx:3.8,cy:2.9,w:14};a1story();},
+  onDrag(id,p){
+    if(id==='D'&&A1.part===1){const s=dot(p,[1/Math.sqrt(5),2/Math.sqrt(5)]);A1.a=Math.max(0.5,Math.min(4,snapv(s/Math.sqrt(5),0.5)));}
+    if(id==='D2'&&A1.part===2){A1.d2=[Math.max(-3,Math.min(6,snapv(p[0]-pk1[0],0.5))),Math.max(-6,Math.min(6,snapv(p[1]-pk1[1],0.5)))];}
+  },
+  render(){a1render();},
+  check(){
+    if(A1.part===1){
+      const smp=sampleSegs([a1piece1()],300),gd=minDist(smp,monument);
+      if(gd<=R1){A1.part=2;view={cx:6,cy:1.2,w:16};a1story();$('hints').innerHTML='';hintsShown=0;levels[cur].hints=HINTS_A1_2;
+        say('good','Through the monument. Now the next step.');a1render();}
+      else{const mid=bez(a1piece1(),0.5);say('bad',`The route passes ${mid[1]<monument[1]?'below':'above'} the monument.`);}
+    }else{
+      const diff=len(sub(A1.d2,dArr));
+      if(diff<=0.75){say('good','No jolt: the camera leaves with the same arrow it arrived with.');pass('<b>Result.</b> Two Hermite pieces that meet at p<sub>k+1</sub> share the arrow d<sub>k+1</sub>: the first piece arrives with it and the second leaves with it. That makes the join C¹.');}
+      else say('bad','Not yet: the camera arrives with one arrow and leaves with a different one, so there is a jolt.');
+    }
+  }
+});
+function a1story(){
+  $('story').innerHTML=A1.part===1
+   ?`<p class="step">Step 1 of 2</p><p class="goal">A camera flies from <b>p<sub>k</sub> = (0, 0)</b> to <b>p<sub>k+1</sub> = (6, 0)</b>. It leaves p<sub>k</sub> along the dashed line and arrives with the fixed arrow <b>d<sub>k+1</sub> = (3, −3)</b>. Drag the tip of <b>d<sub>k</sub></b> along the dashed line so the route passes through the monument.</p>`
+   :`<p class="step">Step 2 of 2</p><p class="goal">The route continues from <b>p<sub>k+1</sub></b> to <b>p<sub>k+2</sub> = (12, 0)</b>. Drag the tip of the orange arrow <b>d′</b>, the arrow the camera leaves p<sub>k+1</sub> with, so that there is no jolt at p<sub>k+1</sub>.</p>`;
+}
+function a1render(){
+  clearBoard();drawGrid();
+  const P=a1piece1(),smp=sampleSegs([P],200),gd=minDist(smp,monument),ok=gd<=R1;
+  if(A1.part===1){seg([-0.5,-1],[4.2,8.4],'head');cameraIcon(pk,63.43,'#2a5bd7');cameraIcon(pk1,-45,'#2a5bd7');}
+  gate(monument,R1,ok,'monument');
+  drawSegs([P],'ok');
+  arrow(pk1,add(pk1,dArr),'#6b7385');label(add(pk1,dArr),'d_{k+1} = (3, −3)',8,18,'lbl');
+  dotAt(pk,7,'cp');dotAt(pk1,7,'cp');
+  label(pk,'p_k',-12,24,'lbl','end');label(pk1,'p_{k+1}',-6,24,'lbl','end');
+  if(A1.part===1){
+    const tip=a1d0();arrow(pk,tip,'#d6531a');handle('D',tip);label(tip,'d_k',14,6,'lbl');
+    $('readout').innerHTML=`<div class="readout"><div>d<sub>k</sub> = (${fmt(A1.a)}, ${fmt(2*A1.a)})</div>
+      <div>Monument: <span class="${ok?'ok':'no'}">${ok?'passes through ✓':'misses by '+f1(gd)}</span></div></div>`;
+  }else{
+    const P2=a1piece2();drawSegs([P2],'ok');dotAt(pk2,7,'cp');label(pk2,'p_{k+2}',-6,24,'lbl','end');
+    arrow(pk2,add(pk2,dEnd),'#6b7385');
+    const tip=add(pk1,A1.d2);arrow(pk1,tip,'#d6531a');handle('D2',tip);label(tip,'d′',14,6,'lbl');
+    const diff=len(sub(A1.d2,dArr)),kind=diff<=0.75?['C¹ (no jolt)','ok']:(A1.d2[0]*dArr[0]+A1.d2[1]*dArr[1]>0&&Math.abs(cross(A1.d2,dArr))<0.3?['same direction, different length','no']:['jolt','no']);
+    $('readout').innerHTML=`<div class="readout"><div>arriving d<sub>k+1</sub> = (3, −3)</div><div>leaving d′ = (${fmt(A1.d2[0])}, ${fmt(A1.d2[1])})</div>
+      <div>Join at p<sub>k+1</sub>: <span class="${kind[1]}">${kind[0]}</span></div></div>`;
+  }
+}
+
+/* ---------------------------------------------------------------- 2. B-spline: land on the landmark */
+const G2=[{n:'start',c:[3.5,5]},{n:'middle',c:[6,5.75]},{n:'end',c:[8.5,5]}],R2=0.35;
+function a2info(){const P=A2.P;const S=bsBez(P[0],P[1],P[2],P[3]);const pts=[bez(S,0),bez(S,0.5),bez(S,1)];return {S,pts};}
+levels.push({
+  short:'Landmarks',title:'Land on the landmark',snapTo:0.5,
+  story:`<p class="goal">One B-spline segment of the camera route must start in the <b>start</b> gate, pass through the <b>middle</b> gate, and end in the <b>end</b> gate. You can only move the four guide points <b>P0 … P3</b> (the dashed polygon). The curve is f(u); its three dots are f(0), f(0.5) and f(1).</p>`,
+  hints:['Put a guide on each gate and look: the curve does not go through its guides.','The start of the segment is a weighted average of P0, P1, P2. Which guide has the biggest weight?','The start is (P0 + 4·P1 + P2) / 6. If P1 sits on the gate, P0 and P2 pull the start away from it. Where should P1 go instead?'],
+  formulas(){return `<div class="w">One uniform cubic B-spline segment is a weighted average of its four guides:<div class="formula">f(u) = b<sub>0</sub>(u)·P0 + b<sub>1</sub>(u)·P1 + b<sub>2</sub>(u)·P2 + b<sub>3</sub>(u)·P3</div>
+  <div class="formula">start f(0) = (P0 + 4·P1 + P2) / 6<br>end f(1) = (P1 + 4·P2 + P3) / 6<br>f(0.5) = (P0 + 23·P1 + 23·P2 + P3) / 48</div>The weights at u = 0.5 are 1/48, 23/48, 23/48, 1/48, and they always add up to 1.</div>`;},
+  setup(){A2.P=[[2,3],[3.5,5],[8.5,5],[10,3]];view={cx:6,cy:3.2,w:15};},
+  onDrag(id,p){const i=+id.slice(1);A2.P[i]=[Math.max(-2,Math.min(14,p[0])),Math.max(-1,Math.min(8,p[1]))];},
+  render(){
+    clearBoard();drawGrid();
+    const {S,pts}=a2info();
+    G2.forEach((g,i)=>gate(g.c,R2,len(sub(pts[i],g.c))<=R2,g.n));
+    drawPolygon(A2.P);
+    drawSegs([S],'ok');
+    pts.forEach((q,i)=>{dotAt(q,6,'cp');label(q,['f(0)','f(0.5)','f(1)'][i],0,i===1?-16:26,'lblm','middle');});
+    A2.P.forEach((p,i)=>{handle('P'+i,p);label(p,'P'+i,14,-14,'lbl');});
+    const rows=G2.map((g,i)=>{const d=len(sub(pts[i],g.c));return `<div>${g.n} of the segment = ${pf(pts[i])} &nbsp; <span class="${d<=R2?'ok':'no'}">${d<=R2?'in the gate ✓':'misses by '+f1(d)}</span></div>`;});
+    $('readout').innerHTML=`<div class="readout">${rows.join('')}</div>`;
+  },
+  check(){
+    const {pts}=a2info();const miss=G2.filter((g,i)=>len(sub(pts[i],g.c))>R2).map(g=>g.n);
+    if(!miss.length){say('good','All three gates.');pass('<b>Result.</b> A B-spline curve is a weighted average of its guides, so it does not pass through them. To make the curve reach a point, you place the guides around that point. At u = 0.5 the weights are 1/48, 23/48, 23/48, 1/48.');}
+    else say('bad','Still missing: '+miss.join(', ')+'. Remember the curve is pulled toward the guides but does not touch them.');
+  }
+});
+
+/* ---------------------------------------------------------------- 3. Local control: fix one landmark */
+const YS3=[0,0.6,1.5,2.2,2.1,1.4,1.0,1.3,2.0,2.4,2.0,1.2,0.5],R3=0.2,LIFT=0.8,BUDGET=0.4;
+function base3(sc){const p=YS3.map((y,i)=>[i,y]);return sc==='chain'?chainBase(p):p;}
+function a3setup(sc){
+  A3.sc=sc;A3.pts=base3(sc);A3.base=routeOf(sc,A3.pts);
+  let best=null;for(const s of A3.base.samples){const d=Math.abs(s.pt[0]-6);if(!best||d<best.d)best={d,pt:s.pt};}
+  A3.ring=[best.pt[0],best.pt[1]+LIFT];
+}
+function a3eval(){
+  const r=routeOf(A3.sc,A3.pts);
+  const hit=minDist(r.samples,A3.ring)<=R3;
+  const moved=movedFraction(A3.base.samples,r.samples,0.03);
+  const flags=[];
+  if(!r.high){r.S.forEach((P,i)=>{let m=0;for(let k=0;k<=20;k++){const t=k/20;m=Math.max(m,len(sub(bez(P,t),bez(A3.base.S[i],t))));}flags[i]=m>0.03?'moved':'ok';});}
+  else flags[0]=moved>0.03?'moved':'ok';
+  const corner=r.high?0:joinKind(r.S);
+  const nchg=flags.filter(f=>f==='moved').length;
+  return {r,hit,moved,flags,corner,nchg};
+}
+levels.push({
+  short:'Local control',title:'Fix one landmark',snapTo:0.1,
+  story:`<p class="goal">The client moves one landmark: the camera route must now pass through the <b>new landmark</b> (the circle). Every piece of the route that changes has to be filmed again, so <b>at most 40%</b> of the pieces may change, and it must stay smooth (no corner). Choose a scheme and drag points until the route reaches the circle. Try each scheme.</p>`,
+  hints:['Try every scheme on the same job and compare how much of the route turns red.','Which points does a piece of the route depend on? Moving a point only changes the pieces that use it.','In a Bézier chain a join point also drags its two neighbours (the handles). Moving a handle alone breaks the join.'],
+  formulas(){return `<div class="w">Which pieces use a point?<ul class="facts" style="margin:4px 0"><li>one Bézier curve: the whole curve depends on every point</li><li>Bézier chain: a join point is shared by two pieces, and its handles keep the join smooth</li><li>Catmull–Rom: segment k uses p<sub>k−1</sub>, p<sub>k</sub>, p<sub>k+1</sub>, p<sub>k+2</sub>, so each point is in four segments</li><li>B-spline: segment j uses P<sub>j</sub> … P<sub>j+3</sub>, so each guide is in four segments</li></ul></div>`;},
+  setup(){
+    a3setup('cr');view={cx:6,cy:1.4,w:14};
+    const holder=document.createElement('div');$('inputs').appendChild(holder);
+    schemeButtons(holder,['high','chain','cr','bs'],()=>A3.sc,sc=>{a3setup(sc);say('','');$('note').innerHTML='';levels[cur].render();});
+    btn($('inputs'),'Reset points','',()=>{a3setup(A3.sc);say('','');$('note').innerHTML='';levels[cur].render();});
+  },
+  onDrag(id,p){
+    const i=+id.slice(1),np=[Math.max(-1,Math.min(13,p[0])),Math.max(-3,Math.min(6,p[1]))];
+    if(A3.sc==='chain'&&i%3===0&&i>0&&i<12){const dlt=sub(np,A3.pts[i]);A3.pts[i-1]=add(A3.pts[i-1],dlt);A3.pts[i+1]=add(A3.pts[i+1],dlt);}
+    A3.pts[i]=np;
+  },
+  render(){
+    clearBoard();drawGrid();
+    const e=a3eval();
+    gate(A3.ring,R3,e.hit,'new landmark');
+    if(A3.base.high)polyline(A3.base.samples.map(s=>s.pt),'ghost');else A3.base.S.forEach(P=>segPath(P,'ghost'));
+    drawRoute(e.r,'ok',e.flags);
+    if(!e.r.high)drawKnots(e.r.S);
+    if(A3.sc!=='high'&&A3.sc!=='chain')drawPolygon(A3.pts);else polyline(A3.pts,'poly');
+    A3.pts.forEach((p,i)=>handle('P'+i,p));
+    A3.pts.forEach((p,i)=>{if(A3.sc==='chain'){if(i%3===0)label(p,'join',10,-12,'lblm');}});
+    const pct=Math.round(e.moved*100),over=e.moved>BUDGET;
+    const segsTxt=e.r.high?'the one curve':`${e.nchg} of ${e.r.S.length} pieces`;
+    $('readout').innerHTML=`<div class="readout">
+      <div>Scheme: <b>${SCHEME_NAME[A3.sc]}</b></div>
+      <div>Pieces re-filmed: <span class="${over?'no':'ok'}">${pct}%</span> (${segsTxt}) &nbsp; <span class="tiny">budget 40%</span></div>
+      <div class="bar"><i class="${over?'over':''}" style="width:${Math.min(100,pct)}%"></i><b style="left:${BUDGET*100}%"></b></div>
+      <div>New landmark: <span class="${e.hit?'ok':'no'}">${e.hit?'reached ✓':'not reached'}</span> &nbsp; Corners: <span class="${e.corner?'no':'ok'}">${e.corner?'yes, at join '+e.corner:'none ✓'}</span></div></div>
+      ${A3.sc==='chain'?'<p class="tiny">In a Bézier chain, dragging a join point (labelled join) also drags the two handle points next to it. A handle moved alone breaks the join.</p>':''}`;
+  },
+  check(){
+    const e=a3eval();
+    if(!e.hit){say('bad','The route does not reach the gate yet.');return;}
+    if(e.corner){say('bad','The route reaches the gate, but there is a corner at join '+e.corner+'. A smooth route is required.');return;}
+    if(e.moved>BUDGET){say('bad',`Reached and smooth, but ${Math.round(e.moved*100)}% of the pieces changed. The budget is 40%. Is there a scheme that moves less?`);return;}
+    say('good',`Gate reached, no corner, only ${Math.round(e.moved*100)}% of the pieces changed.`);
+    pass('<b>Result.</b> A point only changes the pieces that use it. One high-degree curve changes everywhere. A Bézier chain needs the handles to move with a join, so two of its four pieces change. Catmull–Rom and B-spline pieces each use four consecutive points, so a point changes just four of ten pieces.');
+  }
+});
+
+
+/* ================================================================== CITY RIDE (playground) */
+/* ---- the city: blocks of buildings on a street grid, landmarks, a bridge ---- */
+const SEG_T=2.5;                       /* seconds per segment at normal speed */
+const EYE=1.5, JUMP_LIMIT=3;
+let CITYDATA=null;
+function rngSeed(seed){let s=seed;return()=>((s=(s*1664525+1013904223)>>>0)/4294967296);}
+function buildCityData(){
+  const bx=[[1,6.5],[8.5,14],[16,21.5]],by=[[1,5],[7,11],[13,17]],R=rngSeed(11),boxes=[],ground=[],labels=[],trees=[];
+  const pal=['#c9d3e6','#d9cfc2','#c4d6cf','#d8c9d6','#cfd0d8'];
+  by.forEach((yy,j)=>bx.forEach((xx,i)=>{
+    const [x0,x1]=xx,[y0,y1]=yy;
+    if(i===0&&j===1){ground.push({q:[[x0,y0],[x1,y0],[x1,y1],[x0,y1]],c:'#9cc58a'});
+      [[2,7.8],[2.2,10.4],[5.6,7.8],[5.6,10.4],[1.6,9.1],[3,10.5]].forEach(t=>trees.push({x0:t[0]-.25,x1:t[0]+.25,y0:t[1]-.25,y1:t[1]+.25,z0:0,z1:1.3,c:'#5f9a52',tree:true}));
+      labels.push({x:2.6,y:10.7,z:1.7,t:'Park'},{x:3.75,y:9,z:2.0,t:'Fountain'});
+      boxes.push({x0:3.1,x1:4.4,y0:8.35,y1:9.65,z0:0,z1:0.4,c:'#b9bcc4',fountain:true},{x0:3.2,x1:4.3,y0:8.45,y1:9.55,z0:0.4,z1:0.43,c:'#7fb7e6',fountain:true},
+        {x0:3.65,x1:3.85,y0:8.9,y1:9.1,z0:0.43,z1:1.1,c:'#c9ccd4',fountain:true},{x0:3.68,x1:3.82,y0:8.93,y1:9.07,z0:1.1,z1:1.5,c:'#bfe3ff',fountain:true,jet:true});return;}
+    const w=(x1-x0-0.4)/2,h=(y1-y0-0.4)/2;
+    for(let a=0;a<2;a++)for(let b=0;b<2;b++){
+      const bxo={x0:x0+a*(w+0.4),x1:x0+a*(w+0.4)+w,y0:y0+b*(h+0.4),y1:y0+b*(h+0.4)+h,z0:0,z1:1.6+R()*3,c:pal[Math.floor(R()*pal.length)]};
+      if(i===2&&j===1&&a===0&&b===0){Object.assign(bxo,{x0:16.2,x1:17.6,y0:7.2,y1:8.6,z1:8,c:'#8c9bb8',tower:true});}
+      if(i===2&&j===2){ if(a===0&&b===0)Object.assign(bxo,{x0:16.3,x1:21.2,y0:13.3,y1:15.0,z1:1.8,c:'#d6b48a',station:true}); else if(a===0&&b===1)Object.assign(bxo,{x0:16.5,x1:17.3,y0:15.2,y1:16,z1:4.2,c:'#c9a37a'}); else continue; }
+      boxes.push(bxo);
+    }
+  }));
+  boxes.push({x0:16.8,x1:17,y0:7.8,y1:8,z0:8,z1:9.4,c:'#6b7a99',tower:true});
+  boxes.push({x0:14,x1:16,y0:8.6,y1:9.4,z0:2.4,z1:2.9,c:'#7d7f88',bridge:true});
+  labels.push({x:16.9,y:7.9,z:8.4,t:'Tower'},{x:18.75,y:14.15,z:2.1,t:'Station'},{x:15,y:9,z:3.1,t:'Bridge'});
+  /* streets: x 6.5-8.5, 14-16 ; y 5-7, 11-13 */
+  const streets=[[[6.5,0],[8.5,0],[8.5,18],[6.5,18]],[[14,0],[16,0],[16,18],[14,18]],[[0,5],[24,5],[24,7],[0,7]],[[0,11],[24,11],[24,13],[0,13]]];
+  return {boxes:boxes.concat(trees),ground,streets,labels,bx,by};
+}
+function proj3(cam,th,p){const dx=p[0]-cam[0],dy=p[1]-cam[1];return [dx*Math.sin(th)-dy*Math.cos(th),p[2]-EYE,dx*Math.cos(th)+dy*Math.sin(th)];}
+function clipNear(poly,n){const out=[];for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length],ina=a[2]>=n,inb=b[2]>=n;
+  if(ina)out.push(a);if(ina!==inb){const t=(n-a[2])/(b[2]-a[2]);out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,n]);}}return out;}
+function shade(hex,f){const n=parseInt(hex.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;return `rgb(${Math.round(r*f)},${Math.round(g*f)},${Math.round(b*f)})`;}
+function drawCityView(cv,pos,th,ball,trail,col){
+  CITYDATA.boxes.forEach(b=>{if(b.jet)b.z1=1.35+0.22*Math.sin(performance.now()/180);});
+  const ctx=cv.getContext('2d'),Wc=cv.width,Hc=cv.height,foc=Wc/2/Math.tan(35*Math.PI/180),hz=Hc*0.5;
+  const g=ctx.createLinearGradient(0,0,0,hz);g.addColorStop(0,'#8fb8e8');g.addColorStop(1,'#dbe9f7');ctx.fillStyle=g;ctx.fillRect(0,0,Wc,hz);
+  ctx.fillStyle='#b8c2ad';ctx.fillRect(0,hz,Wc,Hc-hz);
+  const toS=v=>[Wc/2+foc*v[0]/v[2],hz-foc*v[1]/v[2]];
+  const fillPoly=(p3,color,stroke)=>{let v=p3.map(p=>proj3(pos,th,p));v=clipNear(v,0.15);if(v.length<3)return;ctx.beginPath();v.forEach((q,i)=>{const s=toS(q);i?ctx.lineTo(s[0],s[1]):ctx.moveTo(s[0],s[1]);});ctx.closePath();ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}};
+  CITYDATA.streets.forEach(q=>fillPoly(q.map(p=>[p[0],p[1],0]),'#5d6472'));
+  CITYDATA.ground.forEach(q=>fillPoly(q.q.map(p=>[p[0],p[1],0]),q.c));
+  for(let t=0.5;t<24;t+=2){
+    [[7.5,'v'],[15,'v'],[6,'h'],[12,'h']].forEach(([k,o])=>{const a=o==='v'?[k,t]:[t,k];if(Math.hypot(a[0]-pos[0],a[1]-pos[1])>14)return;
+      const w=0.06,L=0.9;fillPoly(o==='v'?[[k-w,t,0],[k+w,t,0],[k+w,t+L,0],[k-w,t+L,0]]:[[t,k-w,0],[t+L,k-w,0],[t+L,k+w,0],[t,k+w,0]],'#e8e8ee');});}
+  const bs=CITYDATA.boxes.slice().sort((a,b)=>{const da=Math.hypot((a.x0+a.x1)/2-pos[0],(a.y0+a.y1)/2-pos[1]),db=Math.hypot((b.x0+b.x1)/2-pos[0],(b.y0+b.y1)/2-pos[1]);return db-da;});
+  bs.forEach(b=>{
+    const {x0,x1,y0,y1,z0,z1,c}=b,cx=(x0+x1)/2,cy=(y0+y1)/2;
+    const faces=[
+      {v:[[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]],n:[0,-1,0],f:.70},{v:[[x1,y0,z0],[x1,y1,z0],[x1,y1,z1],[x1,y0,z1]],n:[1,0,0],f:.85},
+      {v:[[x1,y1,z0],[x0,y1,z0],[x0,y1,z1],[x1,y1,z1]],n:[0,1,0],f:.70},{v:[[x0,y1,z0],[x0,y0,z0],[x0,y0,z1],[x0,y1,z1]],n:[-1,0,0],f:.85},
+      {v:[[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]],n:[0,0,1],f:1.0},{v:[[x0,y0,z0],[x0,y1,z0],[x1,y1,z0],[x1,y0,z0]],n:[0,0,-1],f:.6}];
+    const near=Math.hypot(cx-pos[0],cy-pos[1])<13&&!b.tree&&!b.bridge;
+    faces.forEach(f=>{const vis=f.n[0]*(pos[0]-(f.n[0]?(f.n[0]>0?x1:x0):cx))+f.n[1]*(pos[1]-(f.n[1]?(f.n[1]>0?y1:y0):cy))+f.n[2]*(EYE-(f.n[2]>0?z1:z0));
+      if(vis>0){fillPoly(f.v,shade(c,f.f),'rgba(0,0,0,.18)');
+        if(near&&f.n[2]===0){const ax=f.n[0]!==0?1:0,fx=ax?y0:x0,fl=ax?y1-y0:x1-x0,fc=ax?(f.n[0]>0?x1:x0):(f.n[1]>0?y1:y0),seed=Math.floor(x0*13+y0*7);
+          const cols=Math.max(1,Math.floor(fl/0.7));
+          for(let i=0;i<cols;i++)for(let j=0;j*0.8+0.7<z1-0.2;j++){
+            const u0=fx+(i+0.25)*fl/cols,u1=fx+(i+0.75)*fl/cols,zz0=0.55+j*0.8,zz1=zz0+0.42,lit=((i*7919+j*104729+seed)%5===0);
+            const q=ax?[[fc,u0,zz0],[fc,u1,zz0],[fc,u1,zz1],[fc,u0,zz1]]:[[u0,fc,zz0],[u1,fc,zz0],[u1,fc,zz1],[u0,fc,zz1]];
+            fillPoly(q,lit?shade('#ffe9a8',f.f*0.95):shade(c,f.f*0.8));}}}});
+  });
+  ctx.font='bold 13px system-ui,sans-serif';ctx.textAlign='center';
+  CITYDATA.labels.forEach(l=>{const v=proj3(pos,th,[l.x,l.y,l.z]);if(v[2]<0.5||v[2]>22)return;
+    let occ=false;for(let q=1;q<20&&!occ;q++){const f=q/20,px=pos[0]+(l.x-pos[0])*f,py=pos[1]+(l.y-pos[1])*f,pz=EYE+(l.z-EYE)*f;
+      occ=CITYDATA.boxes.some(b=>!b.tree&&!b.fountain&&!b.bridge&&px>b.x0&&px<b.x1&&py>b.y0&&py<b.y1&&pz<b.z1);}
+    if(occ)return;const s=toS(v);if(s[0]<0||s[0]>Wc)return;ctx.fillStyle='#1b2333';ctx.fillText(l.t,s[0],s[1]);});
+  /* dashboard ball gauge */
+  const gx=Wc-48,gy=Hc-48,gr=34;
+  ctx.fillStyle='rgba(255,255,255,.82)';ctx.beginPath();ctx.arc(gx,gy,gr,0,7);ctx.fill();ctx.strokeStyle='#6b7385';ctx.lineWidth=2;ctx.stroke();
+  ctx.strokeStyle='#c8cdd8';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(gx-gr,gy);ctx.lineTo(gx+gr,gy);ctx.moveTo(gx,gy-gr);ctx.lineTo(gx,gy+gr);ctx.stroke();
+  if(trail&&trail.length>1){ctx.strokeStyle=col;ctx.globalAlpha=.45;ctx.lineWidth=2;ctx.beginPath();trail.forEach((q,i)=>{const x=gx+q[0]*gr*0.8,y=gy-q[1]*gr*0.8;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();ctx.globalAlpha=1;}
+  ctx.fillStyle=col;ctx.beginPath();ctx.arc(gx+ball[0]*gr*0.8,gy-ball[1]*gr*0.8,7,0,7);ctx.fill();
+}
+
+/* ---- ride state ---- */
+const RIDE={s:0,playing:true,rate:1,raf:0,last:0,trails:{cr:[],bs:[]}};
+function extPt(a,b){const d=sub(a,b),l=len(d)||1,q=add(a,mul(d,1/l));return [Math.max(0,Math.min(24,q[0])),Math.max(-0.5,Math.min(17.5,q[1]))];}
+function stopRide(){if(RIDE.raf)cancelAnimationFrame(RIDE.raf);RIDE.raf=0;}
+const DEFAULT_PTS=()=>[[7.5,1],[7.5,3.5],[7.5,6],[11,6],[15,6],[15,9],[15,12],[18.5,12],[22,12]];
+const PARK_PTS=()=>[[7.5,0],[7.5,1],[7.5,3.5],[7.5,6],[7.5,9],[7.5,12],[11,12],[15,12],[18.5,12],[22,12],[23,12]];
+const defaultFor=i=>DEFAULT_PTS();
+function blockers(){return CITYDATA.boxes.filter(b=>!b.tree&&!b.fountain&&!b.bridge);}
+function markHits(r){const B=blockers();r.hits=r.samples.map(sm=>{const p=sm.pt;return B.some(b=>p[0]>b.x0+0.05&&p[0]<b.x1-0.05&&p[1]>b.y0+0.05&&p[1]<b.y1-0.05);});
+  const i=r.hits.indexOf(true);r.hit=i<0?null:r.samples[i].pt;return r;}
+function cityRoutes(){
+  const key=JSON.stringify(CITY.pts)+'|'+CITY.ten;
+  if(CITY.cache&&CITY.cache.key===key)return CITY.cache.R;
+  const cr=markHits(routeOf('cr',CITY.pts,{ten:CITY.ten})),bs=markHits(routeOf('bs',CITY.pts,{}));
+  CITY.cache={key,R:{cr,bs}};return CITY.cache.R;
+}
+function stateAt(r,s){ /* camera pose and dashboard ball for route r at ride position s */
+  const n=r.S.length;if(!n)return null;
+  const ss=Math.max(0,Math.min(n-1e-6,s)),i=Math.floor(ss),t=ss-i,P=r.S[i];
+  const pos=bez(P,t),v=dbez(P,t),a=d2bez(P,t),sp=len(v)||1e-9,tt=[v[0]/sp,v[1]/sp],nn=[-tt[1],tt[0]];
+  const ac=[a[0]/(SEG_T*SEG_T),a[1]/(SEG_T*SEG_T)];
+  const at=dot(ac,tt),an=dot(ac,nn);
+  return {pos,th:Math.atan2(v[1],v[0]),ball:[an/2,-at/2].map(q=>Math.max(-1,Math.min(1,q)))};
+}
+function rideFrame(ts){
+  if(cur!==CITY.levelIndex){RIDE.raf=0;return;}
+  const dt=RIDE.last?Math.min(0.1,(ts-RIDE.last)/1000):0;RIDE.last=ts;
+  const R=cityRoutes(),n=R.cr.S.length;
+  if(RIDE.playing&&n){RIDE.s+=dt*RIDE.rate/SEG_T;if(RIDE.s>=n)RIDE.s-=n;RIDE.slider.value=RIDE.s;}
+  drawRide(R);
+  RIDE.raf=requestAnimationFrame(rideFrame);
+}
+function drawRide(R){
+  R=R||cityRoutes();
+  ['cr','bs'].forEach(k=>{
+    const st=stateAt(R[k],RIDE.s),cv=k==='cr'?RIDE.cvA:RIDE.cvB;if(!st){const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);return;}
+    const tr=RIDE.trails[k];tr.push(st.ball);if(tr.length>14)tr.shift();
+    drawCityView(cv,st.pos,st.th,st.ball,tr,k==='cr'?'#2a5bd7':'#7a3fd1');
+    R[k].now=st;
+  });
+  if(RIDE.playhead&&RIDE.gx){RIDE.playhead.setAttribute('x1',RIDE.gx(RIDE.s));RIDE.playhead.setAttribute('x2',RIDE.gx(RIDE.s));}
+  drawMapCameras(R);
+}
+/* ---- the map (SVG) ---- */
+function drawCityMap(R){
+  const D=CITYDATA;
+  el('rect',{x:0,y:0,width:W,height:H,fill:'#e7e9ee'});
+  [[6.5,8.5,0,18],[14,16,0,18]].forEach(s=>el('rect',{x:X(s[0]),y:Y(s[3]),width:PX(s[1]-s[0]),height:Y(s[2])-Y(s[3]),fill:'#f7f8fb'}));
+  [[0,24,5,7],[0,24,11,13]].forEach(s=>el('rect',{x:X(s[0]),y:Y(s[3]),width:PX(s[1]-s[0]),height:Y(s[2])-Y(s[3]),fill:'#f7f8fb'}));
+  D.ground.forEach(g=>{const q=g.q;el('rect',{x:X(q[0][0]),y:Y(q[2][1]),width:PX(q[1][0]-q[0][0]),height:Y(q[0][1])-Y(q[2][1]),fill:g.c,opacity:.8});});
+  D.boxes.forEach(b=>{if(b.tree||b.fountain)return;el('rect',{x:X(b.x0),y:Y(b.y1),width:PX(b.x1-b.x0),height:PX(b.y1-b.y0),fill:b.bridge?'#7d7f88':b.tower?'#6f80a6':b.station?'#d6b48a':b.c,stroke:'#fff','stroke-width':1.5,opacity:b.bridge?.9:1});});
+  {const fx=X(3.75),fy=Y(9);el('circle',{cx:fx,cy:fy,r:PX(1.0),fill:'#b9bcc4'});el('circle',{cx:fx,cy:fy,r:PX(0.8),fill:'#7fb7e6'});el('circle',{cx:fx,cy:fy,r:PX(0.5),fill:'none',stroke:'#fff','stroke-width':1.5,opacity:.8});el('circle',{cx:fx,cy:fy,r:PX(0.12),fill:'#fff'});}
+  D.labels.forEach(l=>{if(l.t==='Fountain')label([l.x,l.y],'Fountain',0,PX(1.0)+16,'lblm','middle');else if(l.t==='Tower')label([l.x,l.y],'Tower',10,-8,'lblm');else if(l.t==='Station')label([l.x,l.y],'Station',0,-8,'lblm','middle');else if(l.t==='Bridge')label([15,9],'Bridge',22,6,'lblm');else label([l.x,l.y],'Park',0,0,'lblm','middle');});
+}
+function drawMapCameras(R){
+  const gs=board.querySelector('#cams');if(gs)gs.remove();
+  const g=el('g',{id:'cams'});
+  [['cr','#2a5bd7'],['bs','#7a3fd1']].forEach(([k,c])=>{const st=R[k]&&R[k].now;if(!st)return;
+    const gg=el('g',{transform:`translate(${X(st.pos[0])} ${Y(st.pos[1])}) rotate(${-st.th*180/Math.PI})`},g);
+    const L=60,kk=Math.tan(22*Math.PI/180)*L;
+    el('polygon',{points:`8,0 ${L},${-kk} ${L},${kk}`,fill:c,opacity:.2},gg);
+    el('rect',{x:-11,y:-7,width:19,height:14,rx:3,fill:c},gg);el('polygon',{points:'8,-4 16,-8 16,8 8,4',fill:c},gg);});
+}
+/* ---- challenges ---- */
+const CHAL=[
+  {name:'Free play',text:'Drag the orange points. Both cameras ride the same points: Catmull–Rom (blue) and B-spline (purple). Watch the ball on each dashboard: it is pushed by the camera’s acceleration, f″. The strip under the map shows how much f″ jumps at each join. Nothing is graded here. Try the missions below when you are ready.'},
+  {name:'Visit the landmarks',text:'<b>Mission 1.</b> Make <b>both</b> routes pass through the two circles, at the Tower corner and the Station corner. Drag the corner points, then press <b>Check</b>.',gates:[{n:'Tower',c:[15,6],r:0.5},{n:'Station',c:[15,12],r:0.5}]},
+  {name:'No push',text:`<b>Mission 2.</b> Make the ball <b>never jump by more than ${JUMP_LIMIT}</b> on both routes. A <b>jump</b> is the change in f″ at a join: the length of (f″ at the end of one piece − f″ at the start of the next). On the strip, each bar shows the size of the jump at one join for one route; a red outline means it is over the limit. Use <b>Add a point</b> and <b>Check</b>.`},
+  {name:'Park tour',text:'<b>Mission 3.</b> Both routes must <b>start at the depot</b> heading north, <b>pass through the fountain</b> in the park, and <b>end at the harbor</b> heading east. Start from the same route as before and reshape it, then press <b>Check</b>.',gates:[{n:'depot',c:[7.5,1],r:0.5},{n:'fountain',c:[3.75,9],r:0.5},{n:'harbor',c:[22,12],r:0.5}]}
+];
+const CHAL_HINTS=[[],
+  ['Catmull–Rom passes through every point you place, so check which route misses.','A B-spline curve does not pass through its points: at a corner it cuts inside. Where should the guide go so the curve reaches the circle?','At a corner the B-spline curve lies about 1/6 of the way back from the guide toward its neighbours. Move the corner point outward.'],
+  ['Look at the strip: where is the red mark, and on which curve?','A B-spline has C²: its f″ has no jump. What about Catmull–Rom?','For Catmull–Rom, round every corner: one point before it, one on the bend and one after it, so that the turn is spread out.','The limit is tight. Place the three points of each corner close to a smooth arc and keep the gaps between neighbouring points similar.'],
+  ['Catmull–Rom passes through every point. Which of your points is closest to the fountain?','A B-spline curve cuts inside every turn, so a single point at the fountain is not enough for it.','Make a pocket: one point on each side of the fountain, further out, plus one at the fountain. Keep the first and last points on the street, so the route still starts at the depot and ends at the harbor.','If a route no longer starts at the depot or ends at the harbor, use + point before the start and + point after the end.']
+];
+function chalEval(){
+  const R=cityRoutes(),res={};
+  ['cr','bs'].forEach(k=>{
+    const r=R[k],o={ok:false,lines:[]};
+    if(!r.S.length){res[k]=o;return;}
+    if(CITY.chal===1){const ds=CHAL[1].gates.map(g=>minDist(r.samples,g.c));o.lines=CHAL[1].gates.map((g,i)=>`${g.n} ${ds[i]<=g.r?'✓':'✗ (misses by '+f1(ds[i]-g.r)+')'}`);o.ok=ds.every((d,i)=>d<=CHAL[1].gates[i].r);}
+    if(CITY.chal===2){const J=jumps(r.S),mx=J.length?Math.max(...J):0;o.lines=[`biggest jump ${f1(mx)} (limit ${JUMP_LIMIT})`];o.ok=mx<=JUMP_LIMIT;}
+    if(CITY.chal===3){const a=r.S[0][0],b=r.S[r.S.length-1][3],d0=dbez(r.S[0],0),d1=dbez(r.S[r.S.length-1],1);
+      const g=CHAL[3].gates,da=len(sub(a,g[0].c)),db=len(sub(b,g[2].c)),df=minDist(r.samples,g[1].c),ha=Math.abs(deg(Math.atan2(d0[1],d0[0]))-90),hb=Math.abs(deg(Math.atan2(d1[1],d1[0])));
+      o.lines=[`depot ${da<=g[0].r&&ha<=12?'✓':'✗'}`,`fountain ${df<=g[1].r?'✓':'✗ (misses by '+f1(df-g[1].r)+')'}`,`harbor ${db<=g[2].r&&hb<=12?'✓':'✗'}`];
+      o.ok=da<=g[0].r&&db<=g[2].r&&ha<=12&&hb<=12&&df<=g[1].r;o.df=df;o.sd=da<=g[0].r&&ha<=12;o.ed=db<=g[2].r&&hb<=12;}
+    o.hit=r.hit;if(CITY.chal>0&&r.hit){o.ok=false;o.lines.push('goes through a building');}
+    res[k]=o;
+  });
+  return res;
+}
+function stripTwo(R){
+  while(graph.firstChild)graph.removeChild(graph.firstChild);
+  const L=56,Rr=748,top=22,bot=140,n=R.cr.S.length;if(!n)return;
+  const nj=Math.max(1,n-1),w=(Rr-L)/nj,cx=i=>L+(i-0.5)*w;
+  const J={cr:jumps(R.cr.S),bs:jumps(R.bs.S)};
+  let vmax=Math.max(JUMP_LIMIT*1.5,...J.cr,...J.bs);vmax=Math.ceil(vmax*1.1/2)*2;
+  const gy=v=>bot-(Math.min(v,vmax)/vmax)*(bot-top);
+  el('line',{x1:L,y1:bot,x2:Rr,y2:bot,class:'axis'},graph);el('line',{x1:L,y1:top,x2:L,y2:bot,class:'axis'},graph);
+  el('text',{x:Rr,y:top-8,class:'tick','text-anchor':'end'},graph,'size of the jump in f″ at each join');
+  const st=niceStep(vmax);for(let v=0;v<=vmax+1e-9;v+=st){el('line',{x1:L,y1:gy(v),x2:Rr,y2:gy(v),class:'grid'},graph);el('text',{x:L-8,y:gy(v)+5,class:'tick','text-anchor':'end'},graph,fmt(v));}
+  for(let i=1;i<n;i++)el('text',{x:cx(i),y:bot+18,class:'tick','text-anchor':'middle'},graph,'p'+(i+1));
+  const bw=Math.min(22,w*0.3);
+  ['cr','bs'].forEach((k,q)=>{const col=k==='cr'?'#2a5bd7':'#7a3fd1';
+    for(let i=1;i<n;i++){const j=J[k][i-1],x=cx(i)+(q?bw*0.6:-bw*0.6)-bw/2,over=j>JUMP_LIMIT,h=Math.max(0,bot-gy(j));
+      if(h>0.5)el('rect',{x:x,y:gy(j),width:bw,height:h,fill:col,stroke:over?'var(--bad)':'none','stroke-width':over?3:0,opacity:.9},graph);
+      if(over||j>0.15)el('text',{x:x+bw/2,y:gy(j)-5,class:'tick','text-anchor':'middle',style:over?'fill:var(--bad);font-weight:700':'fill:var(--muted)'},graph,f1(j));}});
+  const yl=gy(JUMP_LIMIT);el('line',{x1:L,y1:yl,x2:Rr,y2:yl,stroke:'var(--bad)','stroke-width':1.5,'stroke-dasharray':'6 4'},graph);
+  el('text',{x:L+6,y:yl-5,class:'tick',style:'fill:var(--bad)'},graph,'limit '+JUMP_LIMIT);
+  el('text',{x:L+6,y:top-8,class:'tick',style:'fill:#2a5bd7'},graph,'blue: Catmull–Rom');el('text',{x:L+150,y:top-8,class:'tick',style:'fill:#7a3fd1'},graph,'purple: B-spline (no jump)');
+  RIDE.playhead=el('line',{x1:0,y1:top,x2:0,y2:bot,stroke:'var(--ink)','stroke-width':1.5,opacity:.5},graph);
+  RIDE.gx=s=>Math.max(L,Math.min(Rr,L+(s-0.5)*w));RIDE.top=top;RIDE.bot=bot;
+  RIDE.playhead.setAttribute('x1',RIDE.gx(RIDE.s));RIDE.playhead.setAttribute('x2',RIDE.gx(RIDE.s));
+}
+function cityRender(){
+  clearBoard();view={cx:12.2,cy:8.3,w:24.5};
+  const R=cityRoutes();
+  drawCityMap(R);
+  /* gates for the current challenge */
+  const ch=CHAL[CITY.chal];
+  if(ch.gates){const ev=chalEval();ch.gates.forEach((g,i)=>gate(g.c,g.r,false,g.n==='fountain'?'':g.n));}
+  polyline(CITY.pts,'poly');
+  drawSegs(R.cr.S,'cr');drawSegs(R.bs.S,'bs');
+  ['cr','bs'].forEach(k=>{const r=R[k];let run=[];const flush=()=>{if(run.length>1)el('polyline',{points:run.join(' '),fill:'none',stroke:'#c0392b','stroke-width':9,'stroke-linecap':'round',opacity:.85});run=[];};
+    r.samples.forEach((sm,i)=>{if(r.hits[i])run.push(X(sm.pt[0])+','+Y(sm.pt[1]));else flush();});flush();});
+  drawKnots(R.cr.S);
+  CITY.pts.forEach((p,i)=>handle('P'+i,p));
+  if(CITY.sel!=null&&CITY.pts[CITY.sel])el('circle',{cx:X(CITY.pts[CITY.sel][0]),cy:Y(CITY.pts[CITY.sel][1]),r:20,fill:'none',stroke:'#d6531a','stroke-width':3,'stroke-dasharray':'5 4'});
+  CITY.pts.forEach((p,i)=>label(p,'p_{'+i+'}',10,-12,'lblm'));
+  if(CITY.mode==='remove')CITY.pts.forEach((p,i)=>{const x=X(p[0])+14,y=Y(p[1])+14;el('circle',{cx:x,cy:y,r:10,fill:'#c0392b',stroke:'#fff','stroke-width':2,'data-h':'P'+i});el('text',{x:x,y:y+5,'text-anchor':'middle',fill:'#fff','font-size':15,'font-weight':700,'pointer-events':'none'},board,'×');});
+  drawMapCameras(Object.assign(R,{}));
+  stripTwo(R);
+  /* readout */
+  const ev=chalEval();
+  let html='';
+  if(CITY.chal===0){html=`<div class="readout"><div><span style="color:#2a5bd7"><b>Catmull–Rom</b></span>: ${R.cr.S.length} segments &nbsp; <span style="color:#7a3fd1"><b>B-spline</b></span>: ${R.bs.S.length} segments</div><div class="tiny">${CITY.pts.length} points</div>${(ev.cr.hit||ev.bs.hit)?'<div class="no">'+['cr','bs'].filter(k=>ev[k].hit).map(k=>k==='cr'?'Catmull–Rom':'B-spline').join(' and ')+' goes through a building (red on the map).</div>':''}</div>`;}
+  else{html=`<div class="readout">${['cr','bs'].map(k=>`<div><b style="color:${k==='cr'?'#2a5bd7':'#7a3fd1'}">${k==='cr'?'Catmull–Rom':'B-spline'}</b> <span class="${ev[k].ok?'ok':'no'}">${ev[k].ok?'✓':'✗'}</span> <span class="tiny">${ev[k].lines.join(' · ')}</span></div>`).join('')}</div>`;}
+  $('readout').innerHTML=html;
+}
+function renderChips(){
+  const box=CITY.chips;box.innerHTML='<h3 class="mh">Missions</h3>';
+  CHAL.forEach((c,i)=>{const b=document.createElement('button');b.className='btn mrow'+(CITY.chal===i?' on':'');
+    b.innerHTML=i?`<span class="cb">${prog['c'+i]?'☑':'☐'}</span> ${i}. ${c.name}`:'Free play <span class="tiny">(no check)</span>';
+    b.onclick=()=>selectChal(i);box.appendChild(b);});
+}
+function dirWord(v){return Math.abs(v[0])>Math.abs(v[1])?(v[0]>0?'to the right':'to the left'):(v[1]>0?'up':'down');}
+function nearestIdx(c){let b=0,bd=1e9;CITY.pts.forEach((p,i)=>{const d=len(sub(p,c));if(d<bd){bd=d;b=i;}});return b;}
+function missionCheck(){
+  if(!CITY.chal)return;
+  const R=cityRoutes(),ev=chalEval(),nm={cr:'Catmull–Rom',bs:'B-spline'},msgs=[];
+  ['cr','bs'].forEach(k=>{
+    if(ev[k].hit)msgs.push(`${nm[k]} goes through a building near p<sub>${nearestIdx(ev[k].hit)}</sub>. Move that point onto the street.`);
+    if(ev[k].ok)return;
+    if(CITY.chal===1)CHAL[1].gates.forEach(g=>{let m=1e9,q=null;R[k].samples.forEach(s=>{const d=len(sub(s.pt,g.c));if(d<m){m=d;q=s.pt;}});
+      if(m>g.r)msgs.push(`${nm[k]} misses the ${g.n} by ${f1(m-g.r)}. Move p<sub>${nearestIdx(g.c)}</sub> ${dirWord(sub(g.c,q))} by one grid step.`);});
+    if(CITY.chal===2){const J=jumps(R[k].S);let mx=0,ix=0;J.forEach((v,i)=>{if(v>mx){mx=v;ix=i;}});
+      msgs.push(`${nm[k]} still jumps by ${f1(mx)} at p<sub>${ix+2}</sub> (limit ${JUMP_LIMIT}). Round that corner with a point before it, one on the bend and one after it.`);}
+    if(CITY.chal===3){const o=ev[k];
+      if(o.df>CHAL[3].gates[1].r){let m=1e9,q=null;R[k].samples.forEach(s=>{const d=len(sub(s.pt,CHAL[3].gates[1].c));if(d<m){m=d;q=s.pt;}});
+        msgs.push(k==='cr'?`${nm[k]} misses the fountain by ${f1(m-0.5)}. It passes through every point you place, so put a point on the fountain.`:`${nm[k]} misses the fountain by ${f1(m-0.5)}. It cuts inside each turn, so move the points around the fountain further out.`);}
+      if(!o.sd)msgs.push(`${nm[k]} does not start at the depot heading north. Add a point before the start.`);
+      if(!o.ed)msgs.push(`${nm[k]} does not end at the harbor heading east. Add a point after the end.`);}
+  });
+  if(!msgs.length){prog['c'+CITY.chal]=1;if(prog.c1&&prog.c2&&prog.c3)prog['d'+cur]=1;saveProg();buildSteps();renderChips();
+    say('good','<b>Mission done.</b> Both routes pass.');}
+  else say('bad',msgs.join('<br>'));
+}
+function selectChal(i){
+  CITY.chal=i;CITY.pts=defaultFor(i);CITY.ten=0;RIDE.s=0;RIDE.trails={cr:[],bs:[]};
+  if(CITY.tenSlider){CITY.tenSlider.value=0;CITY.tenOut.textContent='0';}
+  $('story').innerHTML=`<p class="goal">${CHAL[i].text}</p>`;
+  hintsShown=0;hintsHidden=false;levels[cur].hints=CHAL_HINTS[i];$('hints').innerHTML='';$('bHint').style.display=CHAL_HINTS[i].length?'':'none';
+  say('','');CITY.sel=null;CITY.mode='move';if(CITY.rmBtn)CITY.rmBtn.textContent='Remove a point';$('bCheck').style.display=i?'':'none';renderChips();cityRender();
+}
+levels.push({
+  short:'City ride',title:'City ride',group:'Playground',noCheck:false,graph:true,snapTo:0.5,
+  hints:[],story:'',
+  formulas(){return `<div class="w">The ball is pushed by the camera's acceleration, f″.<div class="formula">Catmull–Rom: d<sub>k</sub> = ½ (1 − t) (p<sub>k+1</sub> − p<sub>k−1</sub>), C¹ only: f″ jumps at the joins<br>B-spline: (P<sub>j</sub> + 4·P<sub>j+1</sub> + P<sub>j+2</sub>) / 6 at each join, C²: f″ has no jump</div>Both routes use the same points. With n points, each route has n − 3 segments.</div>`;},
+  setup(){
+    if(!CITYDATA)CITYDATA=buildCityData();
+    CITY.levelIndex=cur;CITY.chal=0;CITY.pts=DEFAULT_PTS();CITY.ten=0;CITY.mode='move';
+    const ride=$('ride');ride.style.display='';ride.innerHTML='';
+    const rs=document.createElement('div');rs.className='rides';
+    rs.innerHTML='<figure><canvas id="cvA" width="360" height="230"></canvas><figcaption style="color:#2a5bd7">Catmull–Rom</figcaption></figure><figure><canvas id="cvB" width="360" height="230"></canvas><figcaption style="color:#7a3fd1">B-spline</figcaption></figure>';
+    ride.appendChild(rs);
+    const tr=document.createElement('div');tr.className='transport';ride.appendChild(tr);
+    RIDE.cvA=$('cvA');RIDE.cvB=$('cvB');
+    RIDE.playBtn=btn(tr,'❚❚ Pause','',()=>{RIDE.playing=!RIDE.playing;RIDE.playBtn.textContent=RIDE.playing?'❚❚ Pause':'▶ Play';});
+    RIDE.playing=true;
+    const sl=document.createElement('input');sl.type='range';sl.min=0;sl.max=6;sl.step=0.01;sl.value=0;sl.setAttribute('aria-label','ride position');
+    sl.addEventListener('input',()=>{RIDE.s=parseFloat(sl.value);RIDE.playing=false;RIDE.playBtn.textContent='▶ Play';});tr.appendChild(sl);RIDE.slider=sl;
+    const sel=document.createElement('select');[[0.25,'0.25×'],[0.5,'0.5×'],[1,'1×'],[2,'2×']].forEach(o=>{const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(o[0]===1)op.selected=true;sel.appendChild(op);});
+    sel.onchange=()=>{RIDE.rate=parseFloat(sel.value);};tr.appendChild(sel);RIDE.rate=1;
+    /* missions list */
+    const chips=document.createElement('div');chips.className='mlist';$('inputs').appendChild(chips);CITY.chips=chips;
+    /* edit buttons */
+    const h2=document.createElement('h3');h2.className='mh';h2.textContent='Edit the route';$('inputs').appendChild(h2);
+    const r1=newRow();
+    btn(r1,'Add a point','',()=>{
+      const p=CITY.pts;let bi=0,bl=-1;for(let i=0;i<p.length-1;i++){const l=len(sub(p[i+1],p[i]));if(l>bl){bl=l;bi=i;}}
+      const m=mul(add(p[bi],p[bi+1]),0.5);CITY.pts.splice(bi+1,0,[snapv(m[0],0.5),snapv(m[1],0.5)]);CITY.sel=bi+1;CITY.mode='move';CITY.rmBtn.textContent='Remove a point';
+      say('info',`New point p<sub>${bi+1}</sub> added in the middle of the longest gap (dashed ring). Drag it where you want it.`);cityRender();});
+    CITY.rmBtn=btn(r1,'Remove a point','',()=>{
+      if(CITY.mode==='remove'){CITY.mode='move';CITY.rmBtn.textContent='Remove a point';say('','');}
+      else{CITY.mode='remove';CITY.rmBtn.textContent='Cancel remove';say('info','Click the red × beside the point you want to remove.');}
+      CITY.sel=null;cityRender();});
+    const r2=newRow();
+    btn(r2,'+ point before the start','',()=>{const p=CITY.pts;CITY.pts.unshift(extPt(p[0],p[1]));CITY.sel=0;say('info','New point p<sub>0</sub> added before the start.');cityRender();});
+    btn(r2,'+ point after the end','',()=>{const p=CITY.pts,n=p.length;CITY.pts.push(extPt(p[n-1],p[n-2]));CITY.sel=n;say('info',`New point p<sub>${n}</sub> added after the end.`);cityRender();});
+    btn(r2,'Reset points','',()=>{CITY.pts=defaultFor(CITY.chal);CITY.ten=0;CITY.sel=null;CITY.mode='move';CITY.rmBtn.textContent='Remove a point';say('','');if(CITY.tenSlider){CITY.tenSlider.value=0;CITY.tenOut.textContent='0';}cityRender();});
+    const tin=sliderRow($('inputs'),'tension <b>t</b> (Catmull–Rom)',0,1,0.05,0,v=>{CITY.ten=v;cityRender();});
+    CITY.tenSlider=tin;CITY.tenOut=tin.parentNode.querySelector('b');
+    board.style.cursor='';
+    CITY.chal=0;selectChal(0);
+    RIDE.last=0;RIDE.raf=requestAnimationFrame(rideFrame);
+  },
+  check(){missionCheck();},
+  onDrag(id,p){if(CITY.mode!=='move')return;const i=+id.slice(1);CITY.sel=null;say('','');CITY.pts[i]=[Math.max(0,Math.min(24,p[0])),Math.max(-0.5,Math.min(17.5,p[1]))];},
+  onHandleTap(id){if(CITY.mode==='remove'){if(CITY.pts.length>5){const i=+id.slice(1);CITY.pts.splice(i,1);CITY.mode='move';CITY.rmBtn.textContent='Remove a point';say('info',`Point p<sub>${i}</sub> removed. The points after it are renumbered.`);}else say('bad','A route needs at least 5 points.');return true;}return false;},
+  render(){const n=cityRoutes().cr.S.length;if(RIDE.slider){RIDE.slider.max=Math.max(1,n);}cityRender();}
+});
+
+/* ------------------------------------------------------------------ boot */
+buildSteps();go(0);
+window.__t={levels,go:i=>go(i),A1,A2,A3,CITY,RIDE,cityRoutes,chalEval,selectChal,a3eval:typeof a3eval!=='undefined'?a3eval:null,get cur(){return cur;},get prog(){return prog;}};
+
+
+</script>
+</body>
+</html>
