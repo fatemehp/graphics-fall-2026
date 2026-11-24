@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesh City</title>
+<style>
+:root{--navy:#102a43;--slate:#5b677a;--acc:#2563eb;--bd:#d9dee8;--bg:#f5f7fb;--red:#dc2626;--grn:#16a34a;--amb:#d97706}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:26px;margin:4px 0 2px}
+.sub{color:var(--slate);margin:0 0 10px}
+.seedrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#fff;border:1px solid var(--bd);border-radius:12px;padding:8px 12px;margin-bottom:10px}
+.seedrow input{width:70px;font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:8px}
+.cap{color:var(--slate);font-size:13px;margin:5px 0 0}
+.legend span{display:inline-block;margin-right:10px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.tab{border:1px solid var(--bd);background:#fff;border-radius:999px;padding:9px 16px;font:inherit;cursor:pointer;color:var(--navy)}
+.tab.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.tab.done::after{content:" ✓";color:var(--grn);font-weight:700}.tab.on.done::after{color:#fff}
+.grp{font-size:13px;color:var(--slate);margin:0 2px 0 8px;text-transform:uppercase;letter-spacing:.06em;align-self:center}
+.tabs{align-items:center}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:12px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:12px}
+.card h2{font-size:19px;margin:0 0 6px}
+canvas{display:block;width:100%;background:#fbfcff;border:1px solid var(--bd);border-radius:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+button.b{font:inherit;padding:10px 16px;border-radius:10px;border:1px solid var(--bd);background:#fff;cursor:pointer;color:var(--navy);min-height:44px}
+button.b.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+button.b.on{background:#e8f0fe;border-color:var(--acc)}
+button.b:disabled{opacity:.45;cursor:default}
+.msg{min-height:22px;margin:6px 0;font-weight:600}
+.msg.ok{color:var(--grn)}.msg.bad{color:var(--red)}.msg.info{color:var(--slate);font-weight:500}
+.box{background:#f1f5fb;border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0}
+.box b{color:var(--navy)}
+.pill{display:inline-block;border-radius:999px;padding:1px 10px;font-weight:700;font-size:13px}
+.pill.g{background:#d5f0de;color:#166534}.pill.r{background:#fbd5d5;color:#991b1b}.pill.n{background:#e5eaf2;color:var(--slate)}
+input.num{width:64px;font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:8px}
+table.t{border-collapse:collapse;width:100%;font-size:14px}
+table.t td,table.t th{border:1px solid var(--bd);padding:4px 8px;text-align:center}
+table.t th{background:var(--navy);color:#fff}
+table.t tr.sel td{background:#fde9c7}table.t tr.cw td{color:var(--red);font-weight:700}
+.scroll{max-height:250px;overflow:auto;border-radius:8px}
+details{margin:8px 0}summary{cursor:pointer;font-weight:600}
+.hl{color:var(--acc);font-weight:700}
+label.rd{display:block;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;margin:6px 0;cursor:pointer}
+label.rd.on{border-color:var(--acc);background:#e8f0fe}
+.step{display:flex;gap:6px;margin:6px 0 8px;flex-wrap:wrap}
+.step button{font:inherit;border:1px solid var(--bd);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer}
+.step button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.step button.done::after{content:" ✓";color:var(--grn);font-weight:700}
+.step button.on.done::after{color:#86efac}
+.sw{width:30px;height:30px;border-radius:8px;border:2px solid #cbd5e1;padding:0;min-height:0}.sw.on{border-color:#102a43;box-shadow:0 0 0 2px #fff inset}.ms{font-size:14px;margin:3px 0}.mh{font-weight:700;margin-top:8px;font-size:14px}.pal{gap:6px}
+.cvw{position:relative}.ov{position:absolute;display:flex;gap:6px;flex-wrap:wrap}.ov button,.pop button{font:inherit;font-size:14px;min-height:40px;min-width:40px;padding:4px 10px;border-radius:10px;border:1px solid var(--bd);background:rgba(255,255,255,.95);cursor:pointer;color:var(--navy)}.ov button.on{background:#e8f0fe;border-color:var(--acc)}.ov button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}.pop{position:absolute;display:flex;gap:6px;transform:translate(-50%,8px);z-index:3}.pop .sw{width:32px;height:32px;min-width:0;min-height:0;padding:0}.pop button.del{color:#b91c1c}canvas{touch-action:none}.ov .sw{min-width:0;min-height:0;width:32px;height:32px;padding:0}.stat{position:absolute;left:8px;right:8px;bottom:6px;font-size:13px;font-weight:600;pointer-events:none;text-shadow:0 0 4px #fff,0 0 4px #fff}.bar{height:10px;border-radius:6px;background:#e5eaf2;overflow:hidden;margin:4px 0 6px}.bar i{display:block;height:100%;transition:width .2s}.pcw{max-width:340px}@media(max-width:820px){.stk{position:sticky;top:0;z-index:5}.pcw{max-width:260px;margin:0 auto}.grid{padding-bottom:30vh}}.ov button.sw{padding:0}@media(max-width:700px){.ov button{min-height:34px;min-width:34px;font-size:13px;padding:2px 8px}.ov button.sw{width:28px;height:28px;min-width:0;min-height:0;padding:0}.ov{gap:4px}}.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:9px 16px;border-radius:999px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+.toast.show{opacity:.95}
+</style></head><body><div class="wrap">
+<h1>Mesh City</h1>
+<p class="sub">Repair three broken meshes, then build a city out of triangles. No timer: undo is always there. Your progress is saved in this browser.</p>
+<nav class="tabs" id="tabs"></nav>
+<p class="cap" style="margin:0 0 10px"><button class="b" id="bClear" style="min-height:0;padding:2px 10px;font-size:12px">Clear progress</button></p>
+<div id="stage"></div>
+<div class="toast" id="toast"></div>
+<script>
+const $=(s,r=document)=>r.querySelector(s);
+function h(tag,attrs,...kids){const e=document.createElement(tag);for(const k in(attrs||{})){const v=attrs[k];if(k==='class')e.className=v;else if(k==='html')e.innerHTML=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else e.setAttribute(k,v)}for(const c of kids.flat()){if(c==null)continue;e.append(c.nodeType?c:document.createTextNode(c))}return e}
+function rng(seed){let a=(seed*2654435761)>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(arr,r){for(let i=arr.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800)}
+function setup(canvas,W,H){const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);canvas._W=W;canvas._H=H;return c}
+function pos(canvas,e){const r=canvas.getBoundingClientRect();return[(e.clientX-r.left)*canvas._W/r.width,(e.clientY-r.top)*canvas._H/r.height]}
+function dist2seg(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1];const L=dx*dx+dy*dy;let t=L?((p[0]-a[0])*dx+(p[1]-a[1])*dy)/L:0;t=Math.max(0,Math.min(1,t));return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy)}
+function inTri(p,a,b,c){const s=(p1,p2,p3)=>(p1[0]-p3[0])*(p2[1]-p3[1])-(p2[0]-p3[0])*(p1[1]-p3[1]);const d1=s(p,a,b),d2=s(p,b,c),d3=s(p,c,a);const neg=d1<0||d2<0||d3<0,po=d1>0||d2>0||d3>0;return!(neg&&po)}
+/* mesh topology analysis: edges are unordered pairs; direction counts tell consistency */
+function analyze(tris){const E=new Map();const used=new Set();for(const t of tris){for(let k=0;k<3;k++){const a=t[k],b=t[(k+1)%3];used.add(a);const lo=Math.min(a,b),hi=Math.max(a,b),key=lo+'-'+hi;let e=E.get(key);if(!e){e={a:lo,b:hi,n:0,fw:0,bw:0};E.set(key,e)}e.n++;if(a===lo)e.fw++;else e.bw++}}
+let once=0,three=0,incons=0,twice=0;for(const e of E.values()){if(e.n===1)once++;else if(e.n===2){twice++;if(e.fw===2||e.bw===2)incons++}else if(e.n>=3)three++}
+return{E,V:used.size,nE:E.size,T:tris.length,once,twice,three,incons,euler:used.size-E.size+tris.length}}
+/* 3-D helpers: x right, y up, z toward the viewer */
+function rot3(v,yaw,pitch){let c=Math.cos(yaw),s=Math.sin(yaw);const x1=c*v[0]+s*v[2],z1=-s*v[0]+c*v[2];c=Math.cos(pitch);s=Math.sin(pitch);return[x1,c*v[1]-s*z1,s*v[1]+c*z1]}
+function cross(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]}
+function sub(a,b){return[a[0]-b[0],a[1]-b[1],a[2]-b[2]]}
+function norm(v){const l=Math.hypot(v[0],v[1],v[2])||1;return[v[0]/l,v[1]/l,v[2]/l]}
+/* draws a mesh with flat colours (no lighting). o.colour(it) returns a fill; verts are 3-D, tris index triples */
+function drawMesh(c,W,H,verts,tris,o){const yaw=o.yaw||0,pitch=o.pitch||0,sc=o.scale||100,cx=o.cx??W/2,cy=o.cy??H/2;
+const P=verts.map(v=>rot3(v,yaw,pitch));const S=P.map(p=>[cx+sc*p[0],cy-sc*p[1]]);
+const items=[];
+tris.forEach((t,ti)=>{const a=P[t[0]],b=P[t[1]],cc=P[t[2]];const n=norm(cross(sub(b,a),sub(cc,a)));const front=n[2]>0;if(o.cull&&!front)return;items.push({ti,t,n,front,z:(a[2]+b[2]+cc[2])/3})});
+items.sort((p,q)=>p.z-q.z);
+for(const it of items){const t=it.t;const pa=S[t[0]],pb=S[t[1]],pc=S[t[2]];
+const col=o.colour?o.colour(it):(o.fill||'rgba(150,175,215,.5)');
+c.fillStyle=col;c.beginPath();c.moveTo(pa[0],pa[1]);c.lineTo(pb[0],pb[1]);c.lineTo(pc[0],pc[1]);c.closePath();c.fill();if(o.edges!==false){c.strokeStyle=o.edgeCol||'rgba(16,42,67,.75)';c.lineWidth=o.lw||1;c.stroke()}}
+return{S,P}}
+/* ---------------- Activity 1: find the leaks (a cube with three defects, rain from above) ---------------- */
+const S2={id:1,short:'Find the leaks',group:'Activities',done:false,
+init(seed){const r=rng(seed*101+2);this.W=520;this.H=420;this.yaw=0.6+r()*0.5;this.pitch=0.5;this.zoom=1;this.addSel=[];this.selT=-1;this.hist=[];this.probes=new Set();this.fronts=false;this.hints=0;this.done=false;this.rain=null;this.msg=['info','Goal: closed, consistent, every triangle facing outward. Press Rain to test the cube.'];
+const V=[];for(let b=0;b<8;b++)V.push([(b&1)?1:-1,(b&2)?1:-1,(b&4)?1:-1]);
+const T=[];for(let a=0;a<3;a++)for(let s=0;s<2;s++){const pa=(a+1)%3,qa=(a+2)%3;let q=[[0,0],[1,0],[1,1],[0,1]].map(([p,qq])=>(s<<a)|(p<<pa)|(qq<<qa));const n=cross(sub(V[q[1]],V[q[0]]),sub(V[q[2]],V[q[0]]));const cen=[0,1,2].map(i=>(V[q[0]][i]+V[q[1]][i]+V[q[2]][i]+V[q[3]][i])/4);if(n[0]*cen[0]+n[1]*cen[1]+n[2]*cen[2]<0)q=[q[0],q[3],q[2],q[1]];
+if(r()<.5)T.push([q[0],q[1],q[2]],[q[0],q[2],q[3]]);else T.push([q[1],q[2],q[3]],[q[1],q[3],q[0]])}
+/* triangles 6 and 7 form the roof (y = +1). One of them goes missing. */
+const a0=analyze(T);const share=(i,j)=>T[i].filter(x=>T[j].includes(x)).length===2;
+const m=6+Math.floor(r()*2);const cand=[...Array(12).keys()].filter(i=>i!==m&&!share(i,m)&&i!==6&&i!==7);const rv=cand[Math.floor(r()*cand.length)];
+const edges=[];for(const e of a0.E.values()){const tis=[];T.forEach((t,i)=>{if(t.includes(e.a)&&t.includes(e.b))tis.push(i)});if(tis.every(i=>i!==m&&i!==rv))edges.push(e)}
+const fe=edges[Math.floor(r()*edges.length)];const mid=[0,1,2].map(i=>(V[fe.a][i]+V[fe.b][i])/2);const nm=norm(mid);V.push([mid[0]+nm[0]*1.1,mid[1]+nm[1]*1.1,mid[2]+nm[2]*1.1]);
+const D=T.map(t=>t.slice());D.splice(m,1);const ri=rv>m?rv-1:rv;[D[ri][1],D[ri][2]]=[D[ri][2],D[ri][1]];D.push([fe.a,fe.b,8]);
+this.v=V;this.tris=D;this.init0=D.map(t=>t.slice());this.sel=-1},
+ser(){return{tris:this.tris,done:this.done,probes:[...this.probes]}},
+des(o){this.tris=o.tris;this.done=o.done;this.probes=new Set(o.probes||[])},
+snap(){this.stopR();this.hist.push(JSON.stringify(this.tris))},
+stopR(){if(this.rt){cancelAnimationFrame(this.rt);this.rt=0}this.rain=null},
+/* rain: drops fall straight down; a drop that finds no triangle in the roof falls inside */
+startRain(){this.stopR();const a=analyze(this.tris),E=[...a.E.values()];const open=E.filter(e=>e.n===1),fin=E.filter(e=>e.n>=3),bad=E.filter(e=>e.n===2&&(e.fw===2||e.bw===2));
+const flat=this.tris.map(t=>{const A=this.v[t[0]],B=this.v[t[1]],C=this.v[t[2]];const d=(B[0]-A[0])*(C[2]-A[2])-(C[0]-A[0])*(B[2]-A[2]);return Math.abs(d)>1e-4?{A,B,C,d}:null});
+const r=this.rain={t:0,drops:[],puddle:[],splash:[],open,fin,bad,flat,inN:0};
+const yAt=(f,x,z)=>{const{A,B,C,d}=f;const u=((x-A[0])*(C[2]-A[2])-(C[0]-A[0])*(z-A[2]))/d,w=((B[0]-A[0])*(z-A[2])-(x-A[0])*(B[2]-A[2]))/d;if(u<-1e-9||w<-1e-9||u+w>1+1e-9)return null;return A[1]+u*(B[1]-A[1])+w*(C[1]-A[1])};
+const step=()=>{if(!this.rain)return;r.t++;if(r.t<230)for(let k=0;k<3;k++)r.drops.push({x:(Math.random()*2-1)*1.3,z:(Math.random()*2-1)*1.3,y:2.6,vy:0,in:false});
+r.drops=r.drops.filter(d=>{const y0=d.y;d.vy+=.006;d.y-=d.vy;let hit=null;for(const f of flat){if(!f)continue;const ys=yAt(f,d.x,d.z);if(ys!==null&&y0>=ys&&d.y<=ys&&(hit===null||ys>hit))hit=ys}
+if(hit!==null){if(d.in){r.puddle.push([d.x,hit,d.z]);if(r.puddle.length>90)r.puddle.shift();r.inN++}else r.splash.push({p:[d.x,hit,d.z],t:0});return false}
+if(!d.in&&y0>=1&&d.y<1&&Math.abs(d.x)<=1&&Math.abs(d.z)<=1)d.in=true;return d.y>-2});
+r.splash=r.splash.filter(s=>++s.t<10);
+this.draw();if(r.t<230||r.drops.length||r.splash.length)this.rt=requestAnimationFrame(step);else{this.rt=0;const m=[];if(r.inN)m.push('rain got in through the roof');else if(r.open.length)m.push('there is a gap in the surface');if(r.bad.length)m.push('some walls disagree about which side is inside (red)');if(r.fin.length)m.push('an edge with three triangles splashes (orange)');this.msg=m.length?['bad','After the rain: '+m.join('; ')+'.']:['ok','After the rain: the roof sheds all the water. Nothing gets in.'];this.draw()}};this.rt=requestAnimationFrame(step)},
+undo(){if(!this.hist.length)return;this.stopR();this.tris=JSON.parse(this.hist.pop());this.selT=-1;this.auto();this.draw()},
+reset(){this.stopR();this.tris=this.init0.map(t=>t.slice());this.hist=[];this.selT=-1;this.addSel=[];this.done=false;this.msg=['info','Back to the broken cube.'];this.draw();refreshProg()},
+mount(box){this.cv=h('canvas',{});this.ctx=setup(this.cv,this.W,this.H);
+this.read=h('div',{class:'box'});this.tbl=h('div',{class:'scroll'});this.pm=h('div',{class:'msg'});this.hm=h('div',{class:'msg info'});
+this.pop=h('div',{class:'pop',style:'display:none'},h('button',{onclick:()=>this.flip()},'Flip'),h('button',{class:'del',onclick:()=>this.del()},'Delete'));
+this.fr=h('input',{type:'checkbox',onchange:e=>{this.fronts=e.target.checked;this.draw()}});
+const wrap=h('div',{class:'cvw'},this.cv,this.pop,h('div',{class:'ov',style:'left:8px;top:8px'},h('button',{title:'Undo',onclick:()=>this.undo()},'↶ Undo'),h('button',{title:'Back to the broken cube',onclick:()=>this.reset()},'Reset')),h('div',{class:'ov',style:'right:8px;top:8px'},h('button',{class:'pri',onclick:()=>this.startRain()},'☂ Rain')));
+const left=h('div',{class:'card'},h('h2',{},'Find the leaks'),wrap,h('div',{class:'cap'},'Drag to turn the cube, pinch or scroll to zoom. Tap an edge to count its triangles. Tap a face to Flip or Delete it. Tap three corners to add a triangle.'),this.pm);
+const right=h('div',{class:'card'},
+h('p',{html:'This cube came out of a modelling program with <b>three different defects</b>. The page reports how many edges are wrong, not where. Find and repair them until the cube is a valid <span class="hl">closed, consistently oriented</span> mesh with every triangle facing outward. Use the counts, the drawing, and <b>Rain</b> to see what a defect does.'}),
+this.read,h('details',{},h('summary',{},'Triangle list (tap a row to select it)'),this.tbl),
+h('label',{style:'display:block;margin:8px 0;font-size:14px'},this.fr,' Show which triangles face outward (blue) and inward (red)'),
+h('div',{class:'row'},h('button',{class:'b',onclick:()=>this.hint()},'Hint')),this.hm,
+h('details',{},h('summary',{},'Formulas and rules'),h('ul',{html:'<li>Degree of an edge = number of triangles that contain it. In a closed manifold mesh every edge has degree 2.</li><li>Neighbouring triangles must list their shared edge in <b>opposite directions</b>.</li><li>A triangle listed counter-clockwise as seen from outside faces outward. Flip reverses the order, so it faces inward instead.</li>'})));
+box.append(h('div',{class:'grid'},left,right));
+const cv=this.cv;const ptr=new Map();let g=null;
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,pos(cv,e));g=ptr.size===1?{p:pos(cv,e),y:this.yaw,pi:this.pitch,moved:false}:{d0:null,z0:this.zoom,moved:true}});
+cv.addEventListener('pointercancel',e=>{ptr.delete(e.pointerId);g=null});
+cv.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;ptr.set(e.pointerId,pos(cv,e));if(!g)return;
+if(ptr.size>=2){const [a,b]=[...ptr.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(g.d0==null){g.d0=d;g.z0=this.zoom}this.zoom=Math.max(.5,Math.min(2.2,g.z0*d/g.d0));this.draw();return}
+const p=ptr.get(e.pointerId);const dx=p[0]-g.p[0],dy=p[1]-g.p[1];if(Math.hypot(dx,dy)>5)g.moved=true;if(g.moved){this.yaw=g.y+dx*0.01;this.pitch=Math.max(-1.45,Math.min(1.45,g.pi+dy*0.008));this.draw()}});
+cv.addEventListener('pointerup',e=>{const was=ptr.size===1&&g&&!g.moved;ptr.delete(e.pointerId);if(was)this.tap(pos(cv,e));if(!ptr.size)g=null});
+cv.addEventListener('wheel',e=>{e.preventDefault();this.zoom=Math.max(.5,Math.min(2.2,this.zoom*(e.deltaY<0?1.1:1/1.1)));this.draw()},{passive:false});
+this.draw()},
+proj(){return drawMesh(this.ctx,this.W,this.H,this.v,[],{yaw:this.yaw,pitch:this.pitch,scale:105*this.zoom,cx:this.W/2,cy:this.H/2+5})},
+tap(p){const{S,P}=this.proj();this.stopR();
+let best=-1,bd=15;S.forEach((q,i)=>{const d=Math.hypot(p[0]-q[0],p[1]-q[1]);if(d<bd&&(i<8||this.tris.some(t=>t.includes(i)))){bd=d;best=i}});
+if(best>=0){this.selT=-1;const k=this.addSel.indexOf(best);if(k>=0)this.addSel.splice(k,1);else{this.addSel.push(best);if(this.addSel.length===3){this.snap();this.tris.push(this.addSel.slice());this.addSel=[];this.msg=['info','Triangle added. If it faces inward, tap it and press Flip.'];this.auto()}}this.draw();return}
+this.addSel=[];
+const a=analyze(this.tris);let be=null;bd=11;for(const e of a.E.values()){const d=dist2seg(p,S[e.a],S[e.b]);if(d<bd){bd=d;be=e}}
+if(be){const k=be.a+'-'+be.b;this.probes.add(k);this.msg=['info','Edge ('+be.a+', '+be.b+') is in '+be.n+' triangle'+(be.n>1?'s':'')+'.'];this.draw();return}
+let bi=-1,bz=-1e9;this.tris.forEach((t,i)=>{if(inTri(p,S[t[0]],S[t[1]],S[t[2]])){const z=(P[t[0]][2]+P[t[1]][2]+P[t[2]][2])/3;if(z>bz){bz=z;bi=i}}});this.selT=bi===this.selT?-1:bi;this.draw()},
+del(){if(this.selT<0)return;this.snap();this.tris.splice(this.selT,1);this.selT=-1;this.msg=['info','Triangle deleted.'];this.auto();this.draw()},
+flip(){if(this.selT<0)return;this.snap();const t=this.tris[this.selT];[t[1],t[2]]=[t[2],t[1]];this.msg=['info','Triangle flipped.'];this.auto();this.draw()},
+outward(t){const a=this.v[t[0]],b=this.v[t[1]],c=this.v[t[2]];const n=cross(sub(b,a),sub(c,a));const g=[0,1,2].map(i=>(a[i]+b[i]+c[i])/3);return n[0]*g[0]+n[1]*g[1]+n[2]*g[2]>1e-9},
+hint(){const H=['Look at the numbers on the right. Which one is not zero? Each defect makes a different one non-zero.','Edges in only one triangle form a hole, and the roof is where rain gets in. Tap the edges to see which corners the missing triangle needs, then tap those three corners.','An edge in three triangles has an extra triangle sticking out: tap it and Delete. Neighbours that list a shared edge in the same direction need one of them flipped.'];this.hints=Math.min(this.hints+1,H.length);this.hm.textContent=H.slice(0,this.hints).join(' ')},
+problems(){const a=analyze(this.tris);const m=[];if(a.once)m.push('some edges are in only one triangle');if(a.three)m.push('some edge is in three triangles');if(a.incons)m.push('some neighbours disagree on orientation');
+if(!this.tris.every(t=>t.every(x=>x<8)))m.push('a vertex that is not a corner of the cube is still used');
+if(!m.length){if(this.tris.some(t=>new Set(t).size<3))m.push('a triangle repeats a vertex');else if(a.T!==12)m.push('the cube needs 12 triangles, you have '+a.T);else if(this.tris.some(t=>!this.outward(t)))m.push('all edges are fine, but some triangle faces inward');}return m},
+auto(){const was=this.done;this.done=!this.problems().length;if(this.done){this.msg=['ok','Closed, consistent, facing outward ✓ Try the Rain to see it hold.']}refreshProg()},
+draw(){const c=this.ctx,W=this.W,H=this.H;c.clearRect(0,0,W,H);c.fillStyle='#fbfcff';c.fillRect(0,0,W,H);
+const col=it=>{const t=it.t;if(it.ti===this.selT)return'rgba(251,191,36,.75)';if(this.fronts)return this.outward(t)?'rgba(80,130,240,.45)':'rgba(235,90,90,.6)';return'rgba(150,175,215,.35)'};
+const sc=105*this.zoom,cx=W/2,cy=H/2+5;const{S,P}=drawMesh(c,W,H,this.v,this.tris,{yaw:this.yaw,pitch:this.pitch,scale:sc,cx,cy,colour:col,lw:1.2});
+const rp=q=>{const p=rot3(q,this.yaw,this.pitch);return[cx+sc*p[0],cy-sc*p[1]]};
+const a=analyze(this.tris);
+for(const k of this.probes){const e=a.E.get(k);if(!e)continue;c.strokeStyle=e.n===1?'#2563eb':e.n===2?'#16a34a':'#dc2626';c.lineWidth=e.n===2?3:5;c.beginPath();c.moveTo(S[e.a][0],S[e.a][1]);c.lineTo(S[e.b][0],S[e.b][1]);c.stroke()}
+const r=this.rain;if(r){c.strokeStyle='rgba(14,165,233,.85)';c.lineWidth=2;r.drops.forEach(d=>{const q=rp([d.x,d.y,d.z]),q2=rp([d.x,d.y+.12,d.z]);c.beginPath();c.moveTo(q[0],q[1]);c.lineTo(q2[0],q2[1]);c.stroke()});
+c.fillStyle='rgba(14,165,233,.8)';r.puddle.forEach(p=>{const q=rp(p);c.beginPath();c.arc(q[0],q[1],3,0,7);c.fill()});
+c.strokeStyle='#0ea5e9';c.lineWidth=1.5;r.splash.forEach(s=>{const q=rp(s.p);c.beginPath();c.arc(q[0],q[1],2+s.t,0,7);c.stroke()});
+for(const e of r.bad){c.strokeStyle='#dc2626';c.lineWidth=5;c.beginPath();c.moveTo(S[e.a][0],S[e.a][1]);c.lineTo(S[e.b][0],S[e.b][1]);c.stroke()}
+for(const e of r.fin){const m=[(S[e.a][0]+S[e.b][0])/2,(S[e.a][1]+S[e.b][1])/2];c.strokeStyle='#d97706';c.lineWidth=3;c.beginPath();c.arc(m[0],m[1],10+(r.t%20),0,7);c.stroke()}
+for(const e of r.open){c.strokeStyle='#0ea5e9';c.lineWidth=3;c.beginPath();c.moveTo(S[e.a][0],S[e.a][1]);c.lineTo(S[e.b][0],S[e.b][1]);c.stroke()}}
+S.forEach((q,i)=>{if(i>=8&&!this.tris.some(t=>t.includes(i)))return;const on=this.addSel.indexOf(i);c.beginPath();c.arc(q[0],q[1],on>=0?12:9,0,7);c.fillStyle=on>=0?'#fde9c7':'#fff';c.fill();c.strokeStyle=on>=0?'#d97706':'#102a43';c.lineWidth=2;c.stroke();c.fillStyle='#102a43';c.font='bold 11px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(String(i),q[0],q[1]+.5);if(on>=0){c.fillStyle='#d97706';c.font='bold 12px sans-serif';c.fillText(String(on+1),q[0]+14,q[1]-12)}});
+c.fillStyle='#5b677a';c.font='12px sans-serif';c.textAlign='left';c.textBaseline='alphabetic';c.fillText('probed edges: blue = 1 triangle, green = 2, red = 3 or more',10,H-10);
+if(this.selT>=0&&this.tris[this.selT]){const t=this.tris[this.selT];const g=[0,1,2].map(k=>(S[t[0]][k]+S[t[1]][k]+S[t[2]][k])/3);const R=this.cv.getBoundingClientRect();this.pop.style.display='flex';this.pop.style.left=(g[0]*R.width/W)+'px';this.pop.style.top=(g[1]*R.height/H)+'px'}else this.pop.style.display='none';
+const Z=(v,t)=>'<span class="pill '+(v===0?'g':'r')+'">'+v+'</span> '+t;
+this.read.innerHTML='<b>Counts</b> (vertices n<sub>V</sub> = '+a.V+', edges n<sub>E</sub> = '+a.nE+', triangles n<sub>T</sub> = '+a.T+')<br>'+Z(a.once,'edges in only one triangle')+'<br>'+Z(a.three,'edges in three or more triangles')+'<br>'+Z(a.incons,'edges whose two triangles list them in the same direction');
+this.tbl.innerHTML='<table class="t"><tr><th>#</th><th>vertices</th></tr>'+this.tris.map((t,i)=>'<tr data-i="'+i+'" class="'+(i===this.selT?'sel':'')+'"><td>'+i+'</td><td>('+t.join(', ')+')</td></tr>').join('')+'</table>';
+this.tbl.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>{const i=+tr.dataset.i;this.selT=i===this.selT?-1:i;this.draw()});
+this.pm.className='msg '+this.msg[0];this.pm.textContent=this.msg[1];save()}};
+/* ---------------- Activity 2: throw three pots to match targets ---------------- */
+const TARGETS=[
+{name:'Bowl',budget:150,pts:[[0,0],[.45,.05],[.8,.25],[1.0,.55],[1.05,.8]]},
+{name:'Vase',budget:260,pts:[[0,0],[.5,.04],[.8,.35],[.75,.7],[.3,1.05],[.22,1.35],[.5,1.6]]},
+{name:'Goblet',budget:220,pts:[[0,0],[.5,.03],[.12,.25],[.12,.7],[.4,.85],[.65,1.2],[.7,1.5]]}];
+function polyDist(p,Q){let best=1e9;for(let i=0;i<Q.length-1;i++){const a=Q[i],b=Q[i+1];const dx=b[0]-a[0],dy=b[1]-a[1],L=dx*dx+dy*dy;let t=L?((p[0]-a[0])*dx+(p[1]-a[1])*dy)/L:0;t=Math.max(0,Math.min(1,t));best=Math.min(best,Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy))}return best}
+function samplePoly(Q,n){const out=[];for(let k=0;k<=n;k++){const u=k/n*(Q.length-1),i=Math.min(Q.length-2,Math.floor(u)),f=u-i;out.push([Q[i][0]*(1-f)+Q[i+1][0]*f,Q[i][1]*(1-f)+Q[i+1][1]*f])}return out}
+const S3={id:2,short:'Pottery',group:'Activities',done:false,
+init(){this.cur=0;this.pots=TARGETS.map(()=>({pts:[],N:16,share:true,ok:false}));this.yaw=.5;this.ty=0;this.hist=[];this.done=false;this.water=null;this.msg=['info','Look at the target pot, then tap the profile canvas to place points, bottom first.']},
+ser(){return{cur:this.cur,pots:this.pots,done:this.done}},des(o){this.cur=o.cur||0;if(o.pots&&o.pots.length===3)this.pots=o.pots;this.done=!!o.done},
+P(){return this.pots[this.cur]},T(){return TARGETS[this.cur]},
+sorted(){return this.P().pts.slice().sort((a,b)=>a[1]-b[1])},
+build(){const p=this.P();return this.buildFrom(this.sorted(),p.N,p.share)},
+buildFrom(Q,N,share){const M=Q.length;const verts=[],ids=new Map(),tris=[];if(M<2)return{verts,tris,M};
+const id=(i,j)=>{const ii=share?i%N:i;const key=Q[j][0]<1e-6?'a'+j:ii+'_'+j;if(!ids.has(key)){ids.set(key,verts.length);const th=2*Math.PI*ii/N;verts.push([Q[j][0]*Math.cos(th),Q[j][1]-.8,-Q[j][0]*Math.sin(th)])}return ids.get(key)};
+for(let i=0;i<N;i++)for(let j=0;j<M-1;j++){for(const t of[[id(i,j),id(i+1,j),id(i+1,j+1)],[id(i,j),id(i+1,j+1),id(i,j+1)]])if(new Set(t).size===3)tris.push(t)}
+return{verts,tris,M}},
+match(){const Q=this.sorted(),T=this.T().pts;if(Q.length<2)return{err:9,ok:false};const A=samplePoly(T,60),B=samplePoly(Q,60);let e=0;A.forEach(a=>e=Math.max(e,polyDist(a,Q)));B.forEach(b=>e=Math.max(e,polyDist(b,T)));return{err:e,ok:e<=.2}},
+status(){const p=this.P(),B=this.build(),a=analyze(B.tris),Q=this.sorted(),m=this.match();const top=Q.length?Q[Q.length-1][1]:0;const bottomOpen=Q.length&&Q[0][0]>1e-6,topY=top-.8;const open=[...a.E.values()].filter(e=>e.n===1);const leaks=open.filter(e=>(B.verts[e.a][1]+B.verts[e.b][1])/2<topY-1e-6);
+const seamE=leaks.filter(e=>[e.a,e.b].every(k=>Math.abs(B.verts[k][2])<1e-6&&B.verts[k][0]>-1e-9)),bottomE=leaks.filter(e=>!seamE.includes(e));
+const outward=B.tris.length?signedVol(B.verts,B.tris)>0:false;return{B,a,m,Q,bottomOpen,leaks,seamE,bottomE,open,T:B.tris.length,outward,holds:B.tris.length>0&&!leaks.length&&a.three===0&&a.incons===0&&outward}},
+mount(box){this.pc=h('canvas',{});this.pctx=setup(this.pc,320,380);this.vc=h('canvas',{});this.vctx=setup(this.vc,300,340);this.tc=h('canvas',{});this.tctx=setup(this.tc,300,340);this.pm=h('div',{class:'msg'});this.live=h('div',{class:'box'});this.hm=h('div',{class:'msg info'});this.hints=0;
+this.tabs=h('div',{class:'step'});TARGETS.forEach((t,i)=>this.tabs.append(h('button',{'data-k':i,onclick:()=>{this.stopW();this.cur=i;this.msg=['info',''];this.draw()}},t.name)));
+this.nB=[12,16,24,32].map(n=>h('button',{class:'b',onclick:()=>{this.stopW();this.P().N=n;this.draw()}},'N = '+n));
+this.shB=h('button',{class:'b',onclick:()=>{this.stopW();this.P().share=!this.P().share;this.draw()}},'');
+const left=h('div',{class:'card stk'},h('h2',{},'Throw three pots'),this.tabs,h('div',{style:'display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px'},h('div',{},h('div',{class:'sub',style:'margin:0 0 3px'},'Target pot'),this.tc),h('div',{},h('div',{class:'sub',style:'margin:0 0 3px'},'Your pot'),this.vc)),this.pm);
+const right=h('div',{class:'card'},h('div',{class:'sub',style:'margin:0 0 3px'},'Profile: tap to add a point, drag to move, tap a point to remove'),h('div',{class:'pcw'},this.pc),h('p',{html:'Spin a profile into a pot, like a potter’s wheel. Work out the curve that would spin into the <b>target pot</b>. The rings are at the same heights as the grid lines. The match only has to be close. N must be at least 16 so it looks round, and the pot must <b>hold water</b>.'}),h('div',{class:'row'},this.nB),h('div',{class:'row'},this.shB),this.live,
+h('div',{class:'row'},h('button',{class:'b pri',onclick:()=>this.check()},'Check'),h('button',{class:'b',onclick:()=>this.pour()},'Pour water'),h('button',{class:'b',onclick:()=>this.undo()},'Undo'),h('button',{class:'b',onclick:()=>{this.hist.push(JSON.stringify(this.P().pts));this.P().pts=[];this.draw()}},'Clear points'),h('button',{class:'b',onclick:()=>{const H=['Start on the axis (the left line) at the bottom, so the pot has a closed bottom: the point snaps when you tap near the line.','Corners need points. Use the rings on the pots: they are at the same heights as the grid lines on the profile.','Red edges are open edges, in only one triangle. A red line down the side is the seam: turn Seam joined on. A red ring at the bottom means the first point is not on the axis.'];this.hints=Math.min(this.hints+1,3);this.hm.textContent=H.slice(0,this.hints).join(' ')}},'Hint')),this.hm,
+h('details',{},h('summary',{},'Formulas and rules'),h('ul',{html:'<li>S[i, j] = R<sub>y</sub>(2π i / N) C[j], i in 0 … N, j in 0 … M−1.</li><li>A grid square becomes two triangles: 2 N (M−1) triangles for a full grid. A ring on the axis collapses to one vertex.</li><li>Column i = N is the same ring as column 0. With its own entries, the seam edges are in only one triangle.</li><li>Each doubling of N cuts the position error by a factor of 4.</li>'})));
+box.append(h('div',{class:'grid'},left,right));
+const pc=this.pc;let drag=-1,moved=false;const X0=40,SX=230,Y0=355,SY=200;const toP=p=>[Math.max(0,Math.min(1.25,(p[0]-X0)/SX)),Math.max(0,Math.min(1.7,(Y0-p[1])/SY))];this.X0=X0;this.SX=SX;this.Y0=Y0;this.SY=SY;
+pc.addEventListener('pointerdown',e=>{const p=pos(pc,e);let best=-1,bd=18;this.P().pts.forEach((q,i)=>{const d=Math.hypot(p[0]-(X0+q[0]*SX),p[1]-(Y0-q[1]*SY));if(d<bd){bd=d;best=i}});drag=best;moved=false;this.dp=p;if(best>=0)pc.setPointerCapture(e.pointerId);this.dpt=best});
+pc.addEventListener('pointermove',e=>{if(drag<0)return;const p=pos(pc,e);if(Math.hypot(p[0]-this.dp[0],p[1]-this.dp[1])>6){if(!moved){this.hist.push(JSON.stringify(this.P().pts));moved=true}const q=toP(p);this.P().pts[drag]=[Math.round(q[0]*50)/50,Math.round(q[1]*50)/50];this.draw()}});
+pc.addEventListener('pointerup',e=>{const p=pos(pc,e);if(drag>=0&&!moved){this.stopW();this.hist.push(JSON.stringify(this.P().pts));this.P().pts.splice(drag,1);this.draw()}else if(drag<0&&!moved){const P=this.P();if(P.pts.length>=10){toast('At most 10 points');return}this.stopW();this.hist.push(JSON.stringify(P.pts));const q=toP(p);let x=Math.round(q[0]*50)/50;if(x<.06)x=0;P.pts.push([x,Math.round(q[1]*50)/50]);this.draw()}drag=-1});
+pc.addEventListener('pointercancel',()=>{drag=-1});
+const vc=this.vc;let vd=null;vc.addEventListener('pointerdown',e=>{vc.setPointerCapture(e.pointerId);vd={x:pos(vc,e)[0],y:this.ty}});vc.addEventListener('pointermove',e=>{if(!vd)return;this.ty=vd.y+(pos(vc,e)[0]-vd.x)*.012;this.draw()});vc.addEventListener('pointerup',()=>{vd=null});vc.addEventListener('pointercancel',()=>{vd=null});
+const tc=this.tc;let td=null;tc.addEventListener('pointerdown',e=>{tc.setPointerCapture(e.pointerId);td={x:pos(tc,e)[0],y:this.ty}});tc.addEventListener('pointermove',e=>{if(!td)return;this.ty=td.y+(pos(tc,e)[0]-td.x)*.012;this.draw()});tc.addEventListener('pointerup',()=>{td=null});tc.addEventListener('pointercancel',()=>{td=null});
+const spin=()=>{if(!tc.isConnected)return;if(!td&&!vd){this.ty+=.008;this.draw()}requestAnimationFrame(spin)};requestAnimationFrame(spin);
+this.draw()},
+cy(){const t=this.T().pts;const top=Math.max(...t.map(q=>q[1]));return 170+110*(top/2-.8)},
+rings(v){v.strokeStyle='#cbd5e1';v.lineWidth=1;v.fillStyle='#94a3b8';v.font='11px sans-serif';v.textAlign='left';for(const hh of[.4,.8,1.2,1.6]){v.beginPath();for(let k=0;k<=48;k++){const th=2*Math.PI*k/48,r=rot3([1.3*Math.cos(th),hh-.8,-1.3*Math.sin(th)],this.ty,.35),x=150+110*r[0],y=this.cy()-110*r[1];k?v.lineTo(x,y):v.moveTo(x,y)}v.stroke();v.fillText(String(hh),4,this.cy()-110*(hh-.8)*Math.cos(.35)+4)}},
+drawTarget(){const v=this.tctx,T=this.T();v.clearRect(0,0,300,340);v.fillStyle='#fbfcff';v.fillRect(0,0,300,340);const B=this.buildFrom(T.pts.slice().sort((a,b)=>a[1]-b[1]),32,true);this.rings(v);drawMesh(v,300,340,B.verts,B.tris,{yaw:this.ty,pitch:.35,scale:110,cx:150,cy:this.cy(),cull:true,fill:'rgb(246,200,120)',lw:.6,edgeCol:'rgba(16,42,67,.45)'});v.fillStyle='#5b677a';v.font='12px sans-serif';v.textAlign='left';v.fillText(T.name,8,332)},
+undo(){if(!this.hist.length)return;this.stopW();this.P().pts=JSON.parse(this.hist.pop());this.draw()},
+stopW(){if(this.wt){cancelAnimationFrame(this.wt);this.wt=0}this.water=null},
+pour(){this.stopW();const s=this.status();if(s.B.tris.length<4){toast('Make a pot first');return}const topY=s.Q[s.Q.length-1][1]-.8;const leakY=s.leaks.length?Math.min(...s.leaks.map(e=>Math.min(s.B.verts[e.a][1],s.B.verts[e.b][1]))):topY;this.water={L:-.8,top:Math.min(topY,leakY),drops:[],t:0,leaks:s.leaks};
+const step=()=>{const w=this.water;if(!w)return;w.t++;if(w.L<w.top)w.L=Math.min(w.top,w.L+.016);w.drops=w.drops.filter(d=>d.y>-1.15);if(w.leaks.length&&w.t<260&&w.L>=w.top-1e-6&&w.t%2===0)for(const e of w.leaks){const t=Math.random(),B=s.B;const p=[0,1,2].map(k=>B.verts[e.a][k]*(1-t)+B.verts[e.b][k]*t);w.drops.push({p,y:p[1],vy:0})}
+w.drops.forEach(d=>{d.vy+=.004;d.y-=d.vy;d.p=[d.p[0],d.y,d.p[2]]});this.draw();if(w.L<w.top||w.drops.length||(w.leaks.length&&w.t<260))this.wt=requestAnimationFrame(step);else{const s2=this.status();this.msg=s2.holds?['ok','The pot holds water.']:['bad',this.leakText(s2)];this.wt=0;this.draw()}};this.wt=requestAnimationFrame(step)},
+leakText(s){const m=[];if(s.seamE.length)m.push('Open edge along the seam: the first and last columns are not joined. Turn Seam joined on.');if(s.bottomE.length)m.push('Open ring at the bottom: the first point is not on the axis. Drag it to the axis.');if(!m.length&&!s.holds)m.push('The pot does not hold water yet.');return m.join(' ')},
+check(){const s=this.status(),T=this.T(),p=this.P(),m=[];if(!s.m.ok)m.push('the shape is not close enough to the target yet (largest gap '+s.m.err.toFixed(2)+', allowed 0.20)');if(p.N<16)m.push('N must be at least 16');if(!s.holds)m.push(this.leakText(s).replace(/\.$/,''));
+p.ok=!m.length;this.msg=m.length?['bad','Not yet: '+m.join('; ')+'.']:['ok',T.name+' done ✓'];this.done=this.pots.every(q=>q.ok);if(this.done)this.msg=['ok','Activity 2 complete ✓'];this.draw();refreshProg()},
+draw(){const p=this.P(),T=this.T(),s=this.status(),X0=this.X0,SX=this.SX,Y0=this.Y0,SY=this.SY;
+this.tabs.querySelectorAll('button').forEach((b,i)=>b.className=(i===this.cur?'on ':'')+(this.pots[i].ok?'done':''));this.nB.forEach((b,i)=>b.className='b'+([12,16,24,32][i]===p.N?' on':''));this.shB.className='b'+(p.share?' on':'');this.shB.textContent='Seam joined: '+(p.share?'on':'off');this.drawTarget();
+const c=this.pctx;c.clearRect(0,0,320,380);c.fillStyle='#fbfcff';c.fillRect(0,0,320,380);c.strokeStyle='#e3e8f1';c.lineWidth=1;for(let y=0;y<=1.6;y+=.4){c.beginPath();c.moveTo(X0,Y0-y*SY);c.lineTo(315,Y0-y*SY);c.stroke();c.fillStyle='#5b677a';c.font='12px sans-serif';c.textAlign='right';c.fillText(y.toFixed(1),X0-6,Y0-y*SY+4)}
+c.strokeStyle='#102a43';c.lineWidth=2;c.beginPath();c.moveTo(X0,Y0+4);c.lineTo(X0,20);c.stroke();c.fillStyle='#102a43';c.textAlign='left';c.fillText('axis',X0+4,16);
+
+const Q=s.Q;c.strokeStyle='#2563eb';c.lineWidth=3;c.beginPath();Q.forEach((q,i)=>i?c.lineTo(X0+q[0]*SX,Y0-q[1]*SY):c.moveTo(X0+q[0]*SX,Y0-q[1]*SY));c.stroke();p.pts.forEach(q=>{c.beginPath();c.arc(X0+q[0]*SX,Y0-q[1]*SY,8,0,7);c.fillStyle='#fff';c.fill();c.strokeStyle='#2563eb';c.lineWidth=2.4;c.stroke()});
+const v=this.vctx;v.clearRect(0,0,300,340);v.fillStyle='#fbfcff';v.fillRect(0,0,300,340);const B=s.B;this.rings(v);const o={yaw:this.ty,pitch:.35,scale:110,cx:150,cy:this.cy()};
+if(B.tris.length){const g=drawMesh(v,300,340,B.verts,B.tris,Object.assign({cull:true,fill:'rgb(205,220,245)',lw:.8,edgeCol:'rgba(16,42,67,.55)'},o));v.strokeStyle='#dc2626';v.lineWidth=3.6;for(const e of s.leaks){v.beginPath();v.moveTo(g.S[e.a][0],g.S[e.a][1]);v.lineTo(g.S[e.b][0],g.S[e.b][1]);v.stroke()}
+const w=this.water;if(w){const rp=q=>{const r=rot3(q,this.ty,.35);return[150+110*r[0],this.cy()-110*r[1]]};const L=w.L;let rad=0;const Qs=s.Q;for(let i=0;i<Qs.length-1;i++){const y0=Qs[i][1]-.8,y1=Qs[i+1][1]-.8;if(L>=y0&&L<=y1){const f=(L-y0)/(y1-y0||1);rad=Qs[i][0]*(1-f)+Qs[i+1][0]*f}}
+v.beginPath();for(let k=0;k<=40;k++){const th=2*Math.PI*k/40,q=rp([rad*Math.cos(th),L,-rad*Math.sin(th)]);k?v.lineTo(q[0],q[1]):v.moveTo(q[0],q[1])}v.closePath();v.fillStyle='rgba(37,99,235,.45)';v.fill();v.fillStyle='#0ea5e9';w.drops.forEach(d=>{const q=rp(d.p);v.beginPath();v.arc(q[0],q[1],3.2,0,7);v.fill()})}}
+v.fillStyle='#5b677a';v.font='12px sans-serif';v.textAlign='left';v.fillText('M = '+s.Q.length+', N = '+p.N,8,332);
+const ok=(b,t)=>'<span class="pill '+(b?'g':'r')+'">'+(b?'✓':'…')+'</span> '+t;
+const pct=s.m.err>8?0:s.m.err<=.2?100:Math.max(0,Math.round(100*(1-(s.m.err-.2)/.8)));this.live.innerHTML='<div class="bar"><i style="width:'+pct+'%;background:'+(s.m.ok?'#16a34a':'#f59e0b')+'"></i></div>'+ok(s.m.ok,'matches the target: largest gap '+(s.m.err>8?'-':s.m.err.toFixed(2))+' (allowed 0.20)')+'<br>'+'<span class="pill n">'+s.T+'</span> triangles'+(s.T>0&&s.T<=T.budget?' ★ (fewer than '+T.budget+')':'')+'<br>'+ok(p.N>=16,'N = '+p.N+' (at least 16)')+'<br>'+ok(s.holds,'holds water'+(s.seamE.length?' (red seam edge: turn Seam joined on)':'')+(s.bottomE.length?' (red ring at the bottom: first point must be on the axis)':''));
+this.pm.className='msg '+this.msg[0];this.pm.textContent=this.msg[1];save()}};
+/* ---------------- Playground: Mesh City (one 3-D view, everything by touch) ---------------- */
+function signedVol(V,tris){let s=0;for(const t of tris){const a=V[t[0]],b=V[t[1]],c=V[t[2]];const x=cross(b,c);s+=a[0]*x[0]+a[1]*x[1]+a[2]*x[2]}return s/6}
+function pickT(S,P,tris,p){let bi=-1,bz=-1e9;tris.forEach((t,i)=>{if(inTri(p,S[t[0]],S[t[1]],S[t[2]])){const z=(P[t[0]][2]+P[t[1]][2]+P[t[2]][2])/3;if(z>bz){bz=z;bi=i}}});return bi}
+const PAL=['#cfe0f7','#ef4444','#f59e0b','#facc15','#22c55e','#06b6d4','#6366f1','#a855f7','#ec4899','#64748b','#f8fafc','#92400e'];
+const BLUE=5;
+let CW=560,CH=440;const GR=10;
+const CITY={id:3,short:'Mesh City',group:'Playground',done:false,
+init(){this.pts=[];this.tris=[];this.col=0;this.selP=-1;this.sel=[];this.picks=[];this.hist=[];this.fut=[];this.ax=true;this.nrm=false;this.lock=false;this.multi=false;this.strip=false;this.stripE=null;this.lastGround=[0,0];this.mq=null;this.shelf=false;this.cam={yaw:.6,pitch:.65,zoom:1,px:0,py:0};this.rain=null;this.pondN=-1;this.done=false;this.earned={};this.placing=null;this.lastPt=-1;this.lastTi=-1;this.lastTm=0;this.msg='Tap the ground to place a point. Tap three points to make a triangle. Front or Side view: drag points up and down.'},
+ser(){return{pts:this.pts,tris:this.tris,done:this.done,col:this.col,earned:this.earned}},
+des(o){this.pts=o.pts||[];this.tris=o.tris||[];this.done=!!o.done;this.col=o.col||0;this.earned=o.earned||{}},
+snap(){this.stopRain();this.pondN=-1;this.hist.push(JSON.stringify({pts:this.pts,tris:this.tris}));if(this.hist.length>100)this.hist.shift();this.fut=[]},
+restore(js){const o=JSON.parse(js);this.pts=o.pts;this.tris=o.tris;this.stripE=null;this.picks=[];this.selP=-1;this.sel=[];this.pondN=-1;this.stopRain()},
+undo(){if(!this.hist.length)return;this.fut.push(JSON.stringify({pts:this.pts,tris:this.tris}));this.restore(this.hist.pop());this.draw()},
+redo(){if(!this.fut.length)return;this.hist.push(JSON.stringify({pts:this.pts,tris:this.tris}));this.restore(this.fut.pop());this.draw()},
+P3(){return this.pts.map(p=>p||[0,-99,0])},
+/* ---------- analysis for the missions ---------- */
+comps(){const par=this.pts.map((_,i)=>i);const f=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x]}return x};this.tris.forEach(t=>{par[f(t.v[0])]=f(t.v[1]);par[f(t.v[1])]=f(t.v[2])});const m=new Map();this.tris.forEach((t,i)=>{const r=f(t.v[0]);if(!m.has(r))m.set(r,[]);m.get(r).push(i)});return[...m.values()]},
+info(ids){const T=ids.map(i=>this.tris[i].v),a=analyze(T),V=this.P3();const vol=signedVol(V,T);const cs=new Set(ids.map(i=>this.tris[i].c));const used=[...new Set(T.flat())];const c=[0,1,2].map(k=>used.reduce((q,i)=>q+V[i][k],0)/used.length);return{ids,a,vol,T:T.length,cols:cs.size,used,c,closed:T.length>=4&&a.once===0&&a.three===0&&a.incons===0&&a.euler===2&&vol>1e-6}},
+missions(){const C=this.comps().map(ids=>this.info(ids));const good=C.filter(c=>c.closed);const M={good};
+M.build=[['a closed object: every edge in 2 triangles, all fronts outward (n<sub>V</sub> − n<sub>E</sub> + n<sub>T</sub> = 2)',good.length>0],['painted with at least 2 colours',good.some(c=>c.cols>=2)],['a second closed object with a different number of triangles',new Set(good.map(c=>c.T)).size>=2]];
+const patch=C.some(c=>c.T>=6&&c.a.once>0&&c.a.three===0&&c.a.incons===0);
+M.pond=[['a joined patch of land: 6 or more triangles, edges in 1 or 2 triangles, neighbours agree',patch],['rain runs downhill and collects: at least 25 drops end up in one basin (press ☂ Rain)',this.pondN>=25]];
+let cl=[];for(const c0 of good){const g=good.filter(d=>Math.hypot(c0.c[0]-d.c[0],c0.c[2]-d.c[2])<3);if(g.length>cl.length)cl=g}const cs=new Set();cl.forEach(c=>c.ids.forEach(i=>cs.add(this.tris[i].c)));
+M.more=[['a vehicle (car, boat or aeroplane): 4 closed parts close together, painted with at least 3 colours',cl.length>=4&&cs.size>=3],['a village: 5 closed objects',good.length>=5],['a big city: 100 or more triangles',this.tris.length>=100]];return M},
+/* ---------- view maths (orthographic) ---------- */
+view(){const k=this.cam;return{sc:24*k.zoom,cx:CW/2+k.px,cy:CH/2+k.py+20}},
+/* screen point -> world (x,z) on the plane y = h */
+ground(p,h){const k=this.cam,v=this.view();const sp=Math.sin(k.pitch),cp=Math.cos(k.pitch);if(Math.abs(sp)<.12)return null;const rx=(p[0]-v.cx)/v.sc,ry=-(p[1]-v.cy)/v.sc;const z1p=(h-cp*ry)/sp;const y=cp*ry+sp*z1p,z1=-sp*ry+cp*z1p;const cy_=Math.cos(k.yaw),sy=Math.sin(k.yaw);return[cy_*rx-sy*z1,sy*rx+cy_*z1]},
+stepS(){const z=this.cam.zoom;return z>=2.2?.25:z>=1.1?.5:1},
+snapXZ(x){const t=this.stepS();return Math.round(x/t)*t},
+newPt(x,y,z){this.pts.push([x,y,z]);return this.pts.length-1},
+dirEdges(){const m=new Map();this.tris.forEach((t,i)=>{for(let k=0;k<3;k++){const a=t.v[k],b=t.v[(k+1)%3];const key=a+'_'+b;if(!m.has(key))m.set(key,[]);m.get(key).push(i)}});return m},
+/* which triangles are backward: wrong way round compared with their neighbours, or pointing into a closed object */
+orient(){const T=this.tris,n=T.length,dir=this.dirEdges(),o=new Array(n).fill(null),back=new Set(),V=this.P3();
+for(const ids of this.comps()){const seed=ids[0];o[seed]=0;const q=[seed];while(q.length){const i=q.shift(),t=T[i];for(let k=0;k<3;k++){const a=t.v[k],b=t.v[(k+1)%3];for(const j of(dir.get(b+'_'+a)||[]))if(o[j]===null){o[j]=o[i];q.push(j)}for(const j of(dir.get(a+'_'+b)||[]))if(j!==i&&o[j]===null){o[j]=1-o[i];q.push(j)}}}
+const a=analyze(ids.map(i=>T[i].v));const closed=a.once===0&&a.three===0;let truth0;
+if(closed){let vol=0;for(const i of ids){const t=T[i].v,A=V[t[0]],B=V[t[1]],C=V[t[2]],x=cross(B,C),v=(A[0]*x[0]+A[1]*x[1]+A[2]*x[2])/6;vol+=o[i]?-v:v}truth0=vol>=0}
+else{const c1=ids.filter(i=>o[i]===1).length;truth0=ids.length-c1>=c1}
+for(const i of ids){if(truth0?o[i]===1:o[i]===0)back.add(i)}}
+return back},
+fixFacing(){const b=this.orient();if(!b.size){toast('Every triangle already faces the right way');return}this.snap();b.forEach(i=>{const t=this.tris[i];[t.v[1],t.v[2]]=[t.v[2],t.v[1]]});this.picks=[];toast('Fixed: '+b.size+' triangle'+(b.size>1?'s':'')+' turned round');this.draw()},
+flipObject(){if(!this.sel.length)return;this.snap();const want=new Set(this.sel);for(const ids of this.comps())if(ids.some(i=>want.has(i)))ids.forEach(i=>{const t=this.tris[i];[t.v[1],t.v[2]]=[t.v[2],t.v[1]]});toast('Whole object turned round');this.draw()},
+matchDir(ids){for(let k=0;k<3;k++){const a=ids[k],b=ids[(k+1)%3];for(const t of this.tris)for(let e=0;e<3;e++){const x=t.v[e],y=t.v[(e+1)%3];if(x===a&&y===b)return'flip';if(x===b&&y===a)return'ok'}}return null},
+makeTri(ids){const V=this.P3(),k=this.cam;const n=cross(sub(V[ids[1]],V[ids[0]]),sub(V[ids[2]],V[ids[0]]));if(Math.hypot(n[0],n[1],n[2])<1e-6){toast('Those three points are in a line');return}
+const md=this.matchDir(ids);const nr=rot3(n,k.yaw,k.pitch);let v;if(md)v=md==='ok'?ids.slice():[ids[0],ids[2],ids[1]];else v=nr[2]>=0?ids.slice():[ids[0],ids[2],ids[1]];this.tris.push({v,c:this.col});this.msg=md?'Triangle made. It faces the same way as the triangle it touches.':'Triangle made. Its front faces you. Double-tap a triangle to turn it round.'},
+/* ---------- selection actions ---------- */
+selPts(){return[...new Set(this.sel.flatMap(i=>this.tris[i]?this.tris[i].v:[]))]},
+paint(c){this.col=c;if(this.sel.length){this.snap();this.sel.forEach(i=>this.tris[i]&&(this.tris[i].c=c))}this.draw()},
+flipSel(){if(!this.sel.length)return;this.snap();this.sel.forEach(i=>{const t=this.tris[i];[t.v[1],t.v[2]]=[t.v[2],t.v[1]]});this.picks=[];toast('Flipped: the arrow now points the other way');this.draw()},
+delSel(){if(this.sel.length)this.snap();if(this.sel.length){const dead=new Set(this.sel),pp=this.selPts();this.tris=this.tris.filter((_,i)=>!dead.has(i));const used=new Set(this.tris.flatMap(t=>t.v));pp.forEach(i=>{if(!used.has(i))this.pts[i]=null});this.sel=[]}else if(this.selP>=0){const p=this.selP;this.tris=this.tris.filter(t=>!t.v.includes(p));this.pts[p]=null;this.selP=-1}this.picks=this.picks.filter(i=>this.pts[i]);this.draw()},
+copySel(){if(!this.sel.length)return;this.snap();const map=new Map(),nt=[];for(const i of this.sel){const t=this.tris[i];nt.push({v:t.v.map(p=>{if(!map.has(p))map.set(p,this.newPt(this.pts[p][0]+1,this.pts[p][1],this.pts[p][2]));return map.get(p)}),c:t.c})}const s=this.tris.length;this.tris.push(...nt);this.sel=nt.map((_,i)=>s+i);this.picks=[];this.draw()},
+mirrorSel(){if(!this.sel.length)return;this.snap();const pp=this.selPts();const mx=Math.max(...pp.map(i=>this.pts[i][0]));const map=new Map(),nt=[];const mp=p=>{if(!map.has(p)){const q=this.pts[p];map.set(p,Math.abs(q[0]-mx)<1e-6?p:this.newPt(2*mx-q[0],q[1],q[2]))}return map.get(p)};for(const i of this.sel){const t=this.tris[i];nt.push({v:[mp(t.v[0]),mp(t.v[2]),mp(t.v[1])],c:t.c})}const s=this.tris.length;this.tris.push(...nt);this.sel=nt.map((_,i)=>s+i);this.picks=[];this.draw()},
+pointHere(){if(this.sel.length!==1||!this.lastTap)return;const p=this.lastTap;this.snap();let h=0,xz=null;for(let k=0;k<6;k++){xz=this.ground(p,h);if(!xz)return;const y=this.surfY(xz[0],xz[1],1e9);if(y===null)break;h=y}const id=this.newPt(this.snapXZ(xz[0]),h,this.snapXZ(xz[1]));this.sel=[];this.selP=id;this.choose(id);this.draw()},
+maybeTri(){if(this.picks.length>=3){const p=this.picks.slice(0,3);this.makeTri(p);this.picks=[];if(this.strip)this.stripE=[p[1],p[2]]}},
+/* a point has been chosen (new or existing): picks / strip logic */
+choose(id){if(this.strip&&this.stripE){if(id===this.stripE[1]){this.stripE=null;this.msg='Strip finished.';return}if(id===this.stripE[0])return;this.makeTri([this.stripE[0],this.stripE[1],id]);this.stripE=[this.stripE[1],id];return}
+const k=this.picks.indexOf(id);if(k>=0)this.picks.splice(k,1);else{this.picks.push(id);this.maybeTri()}},
+/* ready-made parts */
+addClosed(V,F,col){const ctr=[0,1,2].map(k=>V.reduce((q,v)=>q+v[k],0)/V.length);const b=this.pts.length;V.forEach(v=>this.pts.push(v));const s0=this.tris.length;for(const f of F){let v=f.map(i=>b+i);const A=V[f[0]],B=V[f[1]],C=V[f[2]];const n=cross(sub(B,A),sub(C,A));const g=[0,1,2].map(k=>(A[k]+B[k]+C[k])/3-ctr[k]);if(n[0]*g[0]+n[1]*g[1]+n[2]*g[2]<0)v=[v[0],v[2],v[1]];this.tris.push({v,c:col})}this.sel=this.tris.slice(s0).map((_,i)=>s0+i);this.selP=-1;this.picks=[];this.stripE=null},
+part(kind,at){this.snap();const g=at||this.lastGround,cx=Math.round(g[0]),cz=Math.round(g[1]);this.placing=null;const o=(x,y,z)=>[cx+x,y,cz+z];const c=this.col;
+if(kind==='box'){this.addClosed([o(-1,0,-1),o(1,0,-1),o(1,0,1),o(-1,0,1),o(-1,1.5,-1),o(1,1.5,-1),o(1,1.5,1),o(-1,1.5,1)],[[0,2,1],[0,3,2],[4,5,6],[4,6,7],[0,1,5],[0,5,4],[1,2,6],[1,6,5],[2,3,7],[2,7,6],[3,0,4],[3,4,7]],c)}
+else if(kind==='wedge'){this.addClosed([o(-1,0,-1),o(1,0,-1),o(1,0,1),o(-1,0,1),o(0,1,-1),o(0,1,1)],[[0,2,1],[0,3,2],[0,1,4],[2,3,5],[1,2,5],[1,5,4],[3,0,4],[3,4,5]],c)}
+else if(kind==='pyramid'){this.addClosed([o(-1,0,-1),o(1,0,-1),o(1,0,1),o(-1,0,1),o(0,1.5,0)],[[0,2,1],[0,3,2],[0,1,4],[1,2,4],[2,3,4],[3,0,4]],c)}
+else if(kind==='land'){const n=8,b=this.pts.length,s0=this.tris.length;for(let ix=0;ix<=n;ix++)for(let iz=0;iz<=n;iz++)this.pts.push([cx+ix-4,0,cz+iz-4]);const id=(ix,iz)=>b+ix*(n+1)+iz;for(let ix=0;ix<n;ix++)for(let iz=0;iz<n;iz++){const a=id(ix,iz),bb=id(ix+1,iz),cc=id(ix+1,iz+1),d=id(ix,iz+1);this.tris.push({v:[a,d,bb],c:4},{v:[bb,d,cc],c:4})}this.sel=[];this.msg='A flat patch of land. Select several triangles, then drag a point in Front or Side view to make hills and hollows.'}
+this.shelf=false;this.msg='Placed. It is selected: drag its points, or tap Flip, Copy, Mirror or Delete.';this.draw()},
+surfY(x,z,ymax){let best=null;for(const t of this.tris){const A=this.pts[t.v[0]],B=this.pts[t.v[1]],C=this.pts[t.v[2]];if(!A||!B||!C)continue;const d=(B[0]-A[0])*(C[2]-A[2])-(C[0]-A[0])*(B[2]-A[2]);if(Math.abs(d)<1e-6)continue;const u=((x-A[0])*(C[2]-A[2])-(C[0]-A[0])*(z-A[2]))/d,w=((B[0]-A[0])*(z-A[2])-(x-A[0])*(B[2]-A[2]))/d;if(u<-1e-9||w<-1e-9||u+w>1+1e-9)continue;const y=A[1]+u*(B[1]-A[1])+w*(C[1]-A[1]);if(y<=ymax&&(best===null||y>best))best=y}return best},
+/* ---------- rain: falls, lands on the topmost triangle, runs downhill across shared edges ---------- */
+stopRain(){if(this.rt){cancelAnimationFrame(this.rt);this.rt=0}this.rain=null},
+startRain(){if(this.rain){this.stopRain();this.draw();return}this.picks=[];const fl=this.tris.map(t=>{const A=this.pts[t.v[0]],B=this.pts[t.v[1]],C=this.pts[t.v[2]];if(!A||!B||!C)return null;const d=(B[0]-A[0])*(C[2]-A[2])-(C[0]-A[0])*(B[2]-A[2]);return Math.abs(d)>1e-6?{A,B,C,d}:null});
+const nb=this.tris.map((t,i)=>{const o=[];this.tris.forEach((u,j)=>{if(j!==i&&u.v.some(x=>t.v.includes(x)))o.push(j)});return o});
+const yAt=(f,x,z)=>{const{A,B,C,d}=f;const u=((x-A[0])*(C[2]-A[2])-(C[0]-A[0])*(z-A[2]))/d,w=((B[0]-A[0])*(z-A[2])-(x-A[0])*(B[2]-A[2]))/d;if(u<-1e-9||w<-1e-9||u+w>1+1e-9)return null;return A[1]+u*(B[1]-A[1])+w*(C[1]-A[1])};
+const grad=f=>{const{A,B,C,d}=f;return[((B[1]-A[1])*(C[2]-A[2])-(C[1]-A[1])*(B[2]-A[2]))/d,(-(B[1]-A[1])*(C[0]-A[0])+(C[1]-A[1])*(B[0]-A[0]))/d]};
+const used=[...new Set(this.tris.flatMap(t=>t.v))].map(i=>this.pts[i]).filter(Boolean);const bx=used.length?[Math.min(...used.map(q=>q[0]))-.5,Math.max(...used.map(q=>q[0]))+.5,Math.min(...used.map(q=>q[2]))-.5,Math.max(...used.map(q=>q[2]))+.5]:[-GR,GR,-GR,GR];const per=Math.max(2,Math.min(9,Math.round(Math.max(400,Math.min(2400,(bx[1]-bx[0])*(bx[3]-bx[2])*30))/300)));
+const R=this.rain={t:0,drops:[],pool:[]};
+const step=()=>{if(this.rain!==R)return;R.t++;if(R.t<300)for(let k=0;k<per;k++)R.drops.push({x:bx[0]+Math.random()*(bx[1]-bx[0]),z:bx[2]+Math.random()*(bx[3]-bx[2]),y:6,vy:0,ph:'f',ti:-1,tr:0});
+for(const d of R.drops){if(d.ph==='f'){const y0=d.y;d.vy+=.012;d.y-=d.vy;let hit=null,hi=-1;fl.forEach((f,i)=>{if(!f)return;const ys=yAt(f,d.x,d.z);if(ys!==null&&y0>=ys-1e-9&&d.y<=ys&&(hit===null||ys>hit)){hit=ys;hi=i}});if(hit!==null){d.y=hit;d.ph='r';d.ti=hi}else if(d.y<-4)d.ph='x'}
+else if(d.ph==='r'){for(let s=0;s<2&&d.ph==='r';s++){const f=fl[d.ti];const g=grad(f);const gl=Math.hypot(g[0],g[1]);if(gl<1e-3){d.ph='p';break}const nx=d.x-g[0]/gl*.05,nz=d.z-g[1]/gl*.05;const y=yAt(f,nx,nz);if(y!==null){d.x=nx;d.z=nz;d.y=y;d.tr+=.05;continue}
+let moved=false;for(const j of nb[d.ti]){const f2=fl[j];if(!f2)continue;const y2=yAt(f2,nx,nz);if(y2!==null){const g2=grad(f2);if(g2[0]*g[0]+g2[1]*g[1]<0){d.ph='p'}else{d.x=nx;d.z=nz;d.y=y2;d.ti=j;d.tr+=.05}moved=true;break}}
+if(!moved){d.x=nx;d.z=nz;d.ph='f';d.vy=.02}}}}
+R.drops=R.drops.filter(d=>{if(d.ph==='p'){d.x+=(Math.random()-.5)*.3;d.z+=(Math.random()-.5)*.3;R.pool.push(d);if(R.pool.length>700)R.pool.shift();return false}return d.ph!=='x'});
+this.draw();if(R.t<300||R.drops.length)this.rt=requestAnimationFrame(step);else{this.rt=0;const cell=new Map();let best=0;for(const d of R.pool){if(d.tr<.3)continue;const k=Math.round(d.x)+'_'+Math.round(d.z);const n=(cell.get(k)||0)+1;cell.set(k,n);best=Math.max(best,n)}this.pondN=best;this.rain=R;R.done=true;this.msg=best>=25?'The rain ran downhill and collected in a basin: '+best+' drops in one spot.':'The rain did not collect in one basin (best spot: '+best+' drops). Make a hollow that the land slopes into.';this.draw()}};this.rt=requestAnimationFrame(step)},
+/* ---------- UI ---------- */
+mount(box){if(window.innerWidth<700){CW=380;CH=520}else{CW=560;CH=440}const nar=CW<500,LX=nar?'50px':'88px';this.cv=h('canvas',{});this.ctx=setup(this.cv,CW,CH);
+this.pop=h('div',{class:'pop',style:'display:none'});this.stat=h('div',{class:'msg info',style:'font-weight:600;margin:8px 2px 2px'});
+const ob=(t,fn,cls,title)=>h('button',{class:cls||'',title:title||t,onclick:e=>{e.stopPropagation();fn()}},t);
+this.bAx=ob('Axes',()=>{this.ax=!this.ax;this.draw()},'','Show or hide the axes and grid');this.bNr=ob('Normals',()=>{this.nrm=!this.nrm;this.draw()},'','Show an arrow out of each triangle front');this.bLk=ob('Lock',()=>{this.lock=!this.lock;this.draw()},'','Lock the camera');
+this.bMu=ob('Select several',()=>{this.multi=!this.multi;if(!this.multi)this.sel=this.sel.slice(0,1);this.draw()},'','Tap or drag a box to select several triangles');
+this.bSt=ob('Strip',()=>{this.strip=!this.strip;this.stripE=null;this.picks=[];this.msg=this.strip?'Strip: make one triangle, then every new point you tap adds a triangle. Tap the last point to stop.':'Strip is off.';this.draw()},'','Each new point adds a triangle on the last edge');
+this.bRn=ob('☂ Rain',()=>this.startRain(),'pri','Rain falls and runs downhill');
+this.bPt=ob('＋ Parts',()=>{this.shelf=!this.shelf;this.placing=null;this.draw()},'','Choose a ready-made part, then tap the ground');
+this.shelfEl=h('div',{class:'ov',style:'left:'+LX+';bottom:54px;flex-direction:column;display:none'},[['Box','box'],['Wedge','wedge'],['Pyramid','pyramid'],['Land','land']].map(([t,k])=>ob(t,()=>{this.placing=k;this.shelf=false;this.sel=[];this.selP=-1;this.picks=[];this.draw()})));
+const sw=h('div',{class:'ov',style:'left:8px;top:58px;width:'+(nar?'28px':'74px')+';gap:4px'},PAL.map((c,i)=>h('button',{class:'sw',style:'background:'+c,title:'Colour',onclick:e=>{e.stopPropagation();this.paint(i)}})));this.sw=sw;
+const wrap=h('div',{class:'cvw'},this.cv,this.pop,
+h('div',{class:'ov',style:'left:8px;top:8px'},ob('↶',()=>this.undo(),'','Undo'),ob('↷',()=>this.redo(),'','Redo')),sw,
+h('div',{class:'ov',style:'right:8px;top:8px;justify-content:flex-end;max-width:72%'},this.bMu,this.bSt,this.bAx,this.bNr,this.bLk,this.bRn),
+this.shelfEl,h('div',{class:'ov',style:'left:'+LX+';bottom:8px'},this.bPt,ob('Clear',()=>{if(this.tris.length||this.pts.some(Boolean)){if(confirm('Clear the whole city? Undo brings it back.')){this.snap();this.pts=[];this.tris=[];this.sel=[];this.picks=[];this.selP=-1;this.stripE=null;this.placing=null;this.draw()}}},'','Remove everything (Undo brings it back)')),
+h('div',{class:'ov',style:'right:8px;bottom:8px;justify-content:flex-end;'+(nar?'max-width:50%':'')},['Top','Front','Side','Reset view'].map(n=>ob(n,()=>this.preset(n),'',n==='Reset view'?'Back to the starting camera. Your city stays.':n))));
+this.ms=h('div',{});
+const left=h('div',{class:'card'},h('h2',{},'Mesh City'),wrap,this.stat);
+const right=h('div',{class:'card'},h('p',{html:'Build whatever you like from <b>triangles</b>. Everything you make is a mesh, and the page checks it.'}),this.ms,
+h('details',{open:''},h('summary',{},'How to build'),h('ul',{html:'<li><b>Tap the ground</b> to place a point. <b>Tap three points</b> and a triangle appears. With <b>Strip</b> on, every further point adds a triangle.</li><li><b>＋ Parts</b>: choose a box, wedge, pyramid or patch of land, then <b>tap the ground</b> where it goes. It arrives selected.</li><li><b>Drag a point</b> to move it. In <b>Front</b> or <b>Side</b> view, dragging moves it up and down. The numbers show its x, y, z.</li><li><b>Tap a triangle</b> to Flip, Copy, Mirror or Delete it. <b>Point here</b> puts a point on the surface you tapped, so you can build on land.</li><li><b>Select several</b>, then tap triangles or drag a box. Dragging one of their points moves them all.</li><li><b>Drag empty space</b> to turn the camera. Pinch or scroll to zoom, two fingers to move. Snapping gets finer as you zoom in.</li><li>A new triangle’s front faces the camera, or the same way as the triangle it touches. Grey means you see its back. <b>Double-tap</b> a triangle to turn it round. Its dark arrow shows the front. Red stripes mean a triangle faces the wrong way: <b>Fix facing</b> turns those round.</li><li><b>Orange edges</b> are open: they are in only one triangle. To fill a gap, tap an orange edge, then tap the third corner.</li><li>In <b>Front</b> or <b>Side</b> view, tap empty space to put a point at that height, in line with your last point.</li><li><b>Build a pyramid:</b> (1) Top view, Strip on: tap four corners in a zigzag (bottom-left, bottom-right, top-left, top-right) for a square base of two triangles. (2) Strip off. Front view: tap empty space above the base for the tip. Back in Top view, drag the tip to the middle. (3) The new tip is already picked, so tap two neighbouring base corners for the first side. For each other side tap the tip, then two neighbouring corners. (4) <b>open edges: 0</b> means it is closed. Red stripes: press Fix facing.</li></ul>'})),
+h('details',{},h('summary',{},'Formulas and rules'),h('ul',{html:'<li>Closed outward surface: every edge in 2 triangles, neighbours list the shared edge in opposite directions, n<sub>V</sub> − n<sub>E</sub> + n<sub>T</sub> = 2.</li><li>Water runs from one triangle to the next only through a shared edge.</li>'})));
+box.append(h('div',{class:'grid'},left,right));
+this.bind();this.draw()},
+preset(n){const k=this.cam;if(n==='Top'){k.pitch=1.45;k.yaw=0}else if(n==='Front'){k.pitch=0;k.yaw=0}else if(n==='Side'){k.pitch=0;k.yaw=Math.PI/2}else Object.assign(k,{yaw:.6,pitch:.65,zoom:1,px:0,py:0});this.draw()},
+geo(){const v=this.view();const P=this.P3().map(q=>rot3(q,this.cam.yaw,this.cam.pitch));return{S:P.map(q=>[v.cx+v.sc*q[0],v.cy-v.sc*q[1]]),P}},
+hitPoint(p,S){let b=-1,bd=17;this.pts.forEach((q,i)=>{if(!q)return;const d=Math.hypot(p[0]-S[i][0],p[1]-S[i][1]);if(d<bd){bd=d;b=i}});return b},
+bind(){const cv=this.cv,ptr=new Map();let g=null;const zc=z=>Math.max(.4,Math.min(6,z));
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);const p=pos(cv,e);ptr.set(e.pointerId,p);if(ptr.size>=2){g={m:'two',moved:true,d0:null,z0:this.cam.zoom,c0:null,k0:{px:this.cam.px,py:this.cam.py}};this.mq=null;return}
+const{S}=this.geo();g={m:'cam',p,moved:false,y:this.cam.yaw,pi:this.cam.pitch};
+if(g.m==='cam'){const b=this.hitPoint(p,S);if(b>=0){g.m='pt';g.i=b}else if(this.multi)g.m='box'}});
+cv.addEventListener('pointercancel',e=>{ptr.delete(e.pointerId);g=null;this.mq=null});
+cv.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;const p=pos(cv,e);ptr.set(e.pointerId,p);if(!g)return;
+if(g.m==='two'&&ptr.size>=2){const[a,b]=[...ptr.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]),mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;if(g.d0==null){g.d0=d;g.z0=this.cam.zoom;g.c0=[mx,my]}this.cam.zoom=zc(g.z0*d/g.d0);this.cam.px=g.k0.px+mx-g.c0[0];this.cam.py=g.k0.py+my-g.c0[1];this.draw();return}
+const dx=p[0]-g.p[0],dy=p[1]-g.p[1];if(!g.moved&&Math.hypot(dx,dy)>6){g.moved=true;if(g.m==='pt'){this.snap();this.picks=[];const i=g.i;g.group=this.multi&&this.sel.length&&this.selPts().includes(i)?this.selPts().map(k=>[k,this.pts[k].slice()]):[[i,this.pts[i].slice()]];this.selP=i;if(!(g.group.length>1))this.sel=[];g.base=this.pts[i].slice()}}
+if(!g.moved)return;
+if(g.m==='cam'){if(this.lock)return;this.cam.yaw=g.y+dx*.01;this.cam.pitch=Math.max(-1.45,Math.min(1.45,g.pi+dy*.008));this.draw()}
+else if(g.m==='box'){this.mq={a:g.p,b:p};this.draw()}
+else if(g.m==='pt'){const base=g.base,t=this.stepS();let nx=0,ny=0,nz=0;
+if(Math.abs(this.cam.pitch)<.5){const sc=this.view().sc,ddx=dx/sc,ddy=-dy/sc,r=[Math.cos(this.cam.yaw),Math.sin(this.cam.yaw)];nx=Math.round((base[0]+r[0]*ddx)/t)*t-base[0];nz=Math.round((base[2]+r[1]*ddx)/t)*t-base[2];ny=Math.round((base[1]+ddy)/t)*t-base[1]}
+else{const xz=this.ground(p,base[1]);if(!xz)return;nx=this.snapXZ(xz[0])-base[0];nz=this.snapXZ(xz[1])-base[2]}
+g.group.forEach(([i,q])=>{this.pts[i]=[q[0]+nx,q[1]+ny,q[2]+nz]});this.draw()}});
+cv.addEventListener('pointerup',e=>{const p=pos(cv,e);const was=ptr.size===1&&g&&!g.moved;ptr.delete(e.pointerId);const gg=g;if(!ptr.size)g=null;if(!gg)return;
+if(gg.moved&&gg.m==='box'){const a=gg.p,b=p,x0=Math.min(a[0],b[0]),x1=Math.max(a[0],b[0]),y0=Math.min(a[1],b[1]),y1=Math.max(a[1],b[1]);const{S}=this.geo();const inB=i=>S[i][0]>=x0&&S[i][0]<=x1&&S[i][1]>=y0&&S[i][1]<=y1;const add=[];this.tris.forEach((t,i)=>{if(t.v.every(inB)&&!this.sel.includes(i))add.push(i)});this.sel=this.sel.concat(add);this.selP=-1;this.mq=null;this.draw();return}
+if(gg.moved&&gg.m==='pt'){const i=this.selP,S=this.geo().S;const j=this.pts.findIndex((q,k)=>q&&k!==i&&Math.hypot(q[0]-this.pts[i][0],q[1]-this.pts[i][1],q[2]-this.pts[i][2])<.3&&Math.hypot(S[k][0]-S[i][0],S[k][1]-S[i][1])<20);if(j>=0&&!(gg.group&&gg.group.length>1)){this.tris.forEach(t=>t.v=t.v.map(x=>x===i?j:x));this.tris=this.tris.filter(t=>new Set(t.v).size===3);this.pts[i]=null;this.sel=[];this.selP=j;this.msg='Points merged into one vertex.'}this.draw();return}
+if(!was)return;this.tap(p,gg)});
+cv.addEventListener('wheel',e=>{e.preventDefault();this.cam.zoom=zc(this.cam.zoom*(e.deltaY<0?1.1:1/1.1));this.draw()},{passive:false})},
+hitEdge(p,S){const deg=new Map();this.tris.forEach(t=>{for(let k=0;k<3;k++){const a=t.v[k],b=t.v[(k+1)%3],key=Math.min(a,b)+'_'+Math.max(a,b);deg.set(key,(deg.get(key)||0)+1)}});let best=null,bd=9;for(const[key,n]of deg){if(n!==1)continue;const[a,b]=key.split('_').map(Number);if(!this.pts[a]||!this.pts[b])continue;const A=S[a],B=S[b],dx=B[0]-A[0],dy=B[1]-A[1],L=dx*dx+dy*dy;if(L<1)continue;let u=((p[0]-A[0])*dx+(p[1]-A[1])*dy)/L;u=Math.max(0,Math.min(1,u));const d=Math.hypot(p[0]-A[0]-u*dx,p[1]-A[1]-u*dy);if(d<bd){bd=d;best=[a,b]}}return best},
+tap(p,gg){const{S,P}=this.geo();this.stopRain();this.lastTap=p;
+if(this.placing){const xz=this.ground(p,0);if(!xz){toast('Tilt the view down (Top or the start view), then tap the ground');return}this.part(this.placing,[Math.round(xz[0]),Math.round(xz[1])]);return}
+if(gg.m==='pt'){const i=gg.i;this.selP=i;this.lastPt=i;this.sel=[];this.snap();this.choose(i);this.draw();return}
+const k=this.cam;
+if(!this.picks.length&&!this.strip){const he=this.hitEdge(p,S);if(he){this.sel=[];this.selP=-1;this.picks=[he[0],he[1]];this.msg='Open edge picked. Tap the third corner (a point, or the ground) to fill the gap.';this.draw();return}}
+const ti=pickT(S,P,this.tris.map(t=>t.v),p);
+if(ti>=0){const now=Date.now();if(!this.multi&&ti===this.lastTi&&now-this.lastTm<380){this.sel=[ti];this.selP=-1;this.lastTi=-1;this.flipSel();return}this.lastTi=ti;this.lastTm=now;this.selP=-1;if(this.multi){const j=this.sel.indexOf(ti);if(j>=0)this.sel.splice(j,1);else this.sel.push(ti)}else this.sel=this.sel.length===1&&this.sel[0]===ti?[]:[ti];this.shelf=false;this.draw();return}
+this.sel=[];this.selP=-1;this.shelf=false;
+const lp=this.lastPt>=0&&this.pts[this.lastPt]?this.lastPt:-1;let x,y=0,z;
+if(Math.abs(k.pitch)<.5&&lp>=0){const sc=this.view().sc,q=this.pts[lp],Sl=S[lp],ddx=(p[0]-Sl[0])/sc,ddy=-(p[1]-Sl[1])/sc,r=[Math.cos(k.yaw),Math.sin(k.yaw)],t=this.stepS();x=Math.round((q[0]+r[0]*ddx)/t)*t;z=Math.round((q[2]+r[1]*ddx)/t)*t;y=Math.max(0,Math.round((q[1]+ddy)/t)*t);if(Math.hypot(x,z)>GR+3){toast('That is outside the world');this.draw();return}}
+else{const xz=this.ground(p,0);if(!xz){toast(lp>=0?'Tilt a little, or tap in the Front or Side view':'Place a first point from the Top or the start view, then you can tap at any height here');this.draw();return}if(Math.hypot(xz[0],xz[1])>GR+3){toast('That is outside the world');this.draw();return}x=this.snapXZ(xz[0]);z=this.snapXZ(xz[1])}
+this.snap();const id=this.newPt(x,y,z);this.lastGround=[x,z];this.lastPt=id;this.selP=id;this.choose(id);this.draw()},
+draw(){const c=this.ctx,W=CW,H=CH,k=this.cam,v=this.view();c.clearRect(0,0,W,H);c.fillStyle='#fbfcff';c.fillRect(0,0,W,H);
+const rp=q=>{const p=rot3(q,k.yaw,k.pitch);return[v.cx+v.sc*p[0],v.cy-v.sc*p[1]]};const line=(a,b,col,w)=>{const A=rp(a),B=rp(b);c.strokeStyle=col;c.lineWidth=w;c.beginPath();c.moveTo(A[0],A[1]);c.lineTo(B[0],B[1]);c.stroke()};
+if(this.ax){for(let i=-GR;i<=GR;i++){const m=i%5===0;line([i,0,-GR],[i,0,GR],m?'#cfd7e6':'#e8edf5',m?1.3:1);line([-GR,0,i],[GR,0,i],m?'#cfd7e6':'#e8edf5',m?1.3:1)}
+const col={x:'#dc2626',y:'#16a34a',z:'#2563eb'};line([-GR-.6,0,0],[GR+.6,0,0],col.x,2);line([0,0,0],[0,6,0],col.y,2);line([0,0,-GR-.6],[0,0,GR+.6],col.z,2);
+c.font='bold 13px sans-serif';c.textAlign='center';c.textBaseline='middle';[['x',[GR+1.4,0,0]],['y',[0,6.6,0]],['z',[0,0,GR+1.4]]].forEach(([n,q])=>{const A=rp(q);c.fillStyle=col[n];c.fillText(n,A[0],A[1])});
+c.font='11px sans-serif';c.fillStyle='#5b677a';for(let i=-GR;i<=GR;i+=2){if(!i)continue;let A=rp([i,0,0]);c.fillText(String(i),A[0],A[1]+11);A=rp([0,0,i]);c.fillText(String(i),A[0]-11,A[1])}for(let i=1;i<=5;i++){const A=rp([0,i,0]);c.fillText(String(i),A[0]-11,A[1])}}
+const V=this.P3(),T=this.tris.map(t=>t.v);const selSet=new Set(this.sel);
+const colour=it=>it.front?PAL[this.tris[it.ti].c]:'#4b5563';
+const{S,P}=drawMesh(c,W,H,V,T,{yaw:k.yaw,pitch:k.pitch,scale:v.sc,cx:v.cx,cy:v.cy,colour,lw:1});
+const back=this.orient();this.nBack=back.size;
+if(back.size){c.save();c.lineWidth=1.6;c.strokeStyle='rgba(220,38,38,.85)';back.forEach(i=>{const t=this.tris[i].v;if(!t.every(x=>this.pts[x]))return;const A=S[t[0]],B=S[t[1]],C2=S[t[2]];c.save();c.beginPath();c.moveTo(A[0],A[1]);c.lineTo(B[0],B[1]);c.lineTo(C2[0],C2[1]);c.closePath();c.clip();const x0=Math.min(A[0],B[0],C2[0]),x1=Math.max(A[0],B[0],C2[0]),y0=Math.min(A[1],B[1],C2[1]),y1=Math.max(A[1],B[1],C2[1]);c.beginPath();for(let d=x0-(y1-y0);d<x1+6;d+=6){c.moveTo(d,y1);c.lineTo(d+(y1-y0),y0)}c.stroke();c.restore()});c.restore()}
+const deg=new Map();this.tris.forEach(t=>{for(let k2=0;k2<3;k2++){const a=t.v[k2],b=t.v[(k2+1)%3],key=Math.min(a,b)+'_'+Math.max(a,b);deg.set(key,(deg.get(key)||0)+1)}});let nOpen=0;
+c.lineCap='round';deg.forEach((n,key)=>{if(n===2)return;const[a,b]=key.split('_').map(Number);if(!this.pts[a]||!this.pts[b])return;if(n===1)nOpen++;c.strokeStyle=n===1?'#f97316':'#dc2626';c.lineWidth=n===1?3.2:3.6;c.beginPath();c.moveTo(S[a][0],S[a][1]);c.lineTo(S[b][0],S[b][1]);c.stroke()});this.nOpen=nOpen;
+selSet.forEach(i=>{const t=this.tris[i];if(!t||!t.v.every(x=>this.pts[x]))return;const A=S[t.v[0]],B=S[t.v[1]],C2=S[t.v[2]];c.strokeStyle='#d97706';c.lineWidth=3.4;c.lineJoin='round';c.beginPath();c.moveTo(A[0],A[1]);c.lineTo(B[0],B[1]);c.lineTo(C2[0],C2[1]);c.closePath();c.stroke();
+const a=V[t.v[0]],b=V[t.v[1]],d=V[t.v[2]];const n=norm(cross(sub(b,a),sub(d,a)));const g=[0,1,2].map(q=>(a[q]+b[q]+d[q])/3);const e=[g[0]+n[0]*1.1,g[1]+n[1]*1.1,g[2]+n[2]*1.1];const G=rp(g),E=rp(e);c.strokeStyle='#0f172a';c.fillStyle='#0f172a';c.lineWidth=2.6;c.beginPath();c.moveTo(G[0],G[1]);c.lineTo(E[0],E[1]);c.stroke();const an=Math.atan2(E[1]-G[1],E[0]-G[0]);c.beginPath();c.moveTo(E[0],E[1]);c.lineTo(E[0]-9*Math.cos(an-.45),E[1]-9*Math.sin(an-.45));c.lineTo(E[0]-9*Math.cos(an+.45),E[1]-9*Math.sin(an+.45));c.closePath();c.fill()});
+if(this.nrm)this.tris.forEach(t=>{const a=V[t.v[0]],b=V[t.v[1]],d=V[t.v[2]];const n=norm(cross(sub(b,a),sub(d,a)));const g=[0,1,2].map(i=>(a[i]+b[i]+d[i])/3);line(g,[g[0]+n[0]*.8,g[1]+n[1]*.8,g[2]+n[2]*.8],'#0f172a',2)});
+const R=this.rain;if(R){c.fillStyle='rgba(14,165,233,.75)';R.pool.forEach(d=>{const q=rp([d.x,d.y,d.z]);c.beginPath();c.arc(q[0],q[1],2.6,0,7);c.fill()});c.strokeStyle='rgba(14,165,233,.85)';c.lineWidth=2;R.drops.forEach(d=>{const q=rp([d.x,d.y,d.z]);if(d.ph==='f'){const q2=rp([d.x,d.y+.5,d.z]);c.beginPath();c.moveTo(q[0],q[1]);c.lineTo(q2[0],q2[1]);c.stroke()}else{c.fillStyle='#0ea5e9';c.beginPath();c.arc(q[0],q[1],3,0,7);c.fill()}})}
+if(this.stripE&&this.pts[this.stripE[0]]&&this.pts[this.stripE[1]]){c.strokeStyle='#f59e0b';c.lineWidth=4;c.beginPath();c.moveTo(S[this.stripE[0]][0],S[this.stripE[0]][1]);c.lineTo(S[this.stripE[1]][0],S[this.stripE[1]][1]);c.stroke()}
+this.pts.forEach((q,i)=>{if(!q)return;const on=i===this.selP,pk=this.picks.indexOf(i);if(on||pk>=0){const g=rp([q[0],0,q[2]]);c.strokeStyle='#94a3b8';c.setLineDash([3,3]);c.lineWidth=1;c.beginPath();c.moveTo(S[i][0],S[i][1]);c.lineTo(g[0],g[1]);c.stroke();c.setLineDash([]);c.fillStyle='rgba(148,163,184,.6)';c.beginPath();c.arc(g[0],g[1],3,0,7);c.fill()}
+c.beginPath();c.arc(S[i][0],S[i][1],pk>=0||on?10:(this.pts.length>40?4:6),0,7);c.fillStyle=pk>=0?'#fde9c7':'#fff';c.fill();c.strokeStyle=on?'#2563eb':'#102a43';c.lineWidth=on?3:1.6;c.stroke();if(pk>=0){c.fillStyle='#b45309';c.font='bold 12px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(String(pk+1),S[i][0],S[i][1]+.5)}});
+if(this.selP>=0&&this.pts[this.selP]){const q=S[this.selP],pt=this.pts[this.selP];const f=x=>String(Math.round(x*100)/100);const txt='('+f(pt[0])+', '+f(pt[1])+', '+f(pt[2])+')';c.font='bold 12px sans-serif';const w=c.measureText(txt).width+12;c.fillStyle='rgba(255,255,255,.92)';c.strokeStyle='#cbd5e1';c.lineWidth=1;c.fillRect(q[0]-w/2,q[1]-50,w,20);c.strokeRect(q[0]-w/2,q[1]-50,w,20);c.fillStyle='#102a43';c.textAlign='center';c.textBaseline='middle';c.fillText(txt,q[0],q[1]-40)}
+if(this.mq){const a=this.mq.a,b=this.mq.b;c.fillStyle='rgba(37,99,235,.12)';c.strokeStyle='#2563eb';c.setLineDash([5,4]);c.lineWidth=1.5;c.fillRect(Math.min(a[0],b[0]),Math.min(a[1],b[1]),Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]));c.strokeRect(Math.min(a[0],b[0]),Math.min(a[1],b[1]),Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]));c.setLineDash([])}
+const pop=this.pop;pop.innerHTML='';const R2=this.cv.getBoundingClientRect();let gx=0,gy=0,show=false;const btn=(t,fn,cls)=>pop.append(h('button',{class:cls||'',onclick:e=>{e.stopPropagation();fn()}},t));
+if(this.sel.length&&this.tris[this.sel[0]]){const ids=this.selPts();gx=ids.reduce((s,i)=>s+S[i][0],0)/ids.length;gy=Math.max(...ids.map(i=>S[i][1]));show=true;btn('Flip',()=>this.flipSel());btn('Flip object',()=>this.flipObject());btn('Copy',()=>this.copySel());btn('Mirror',()=>this.mirrorSel());if(this.sel.length===1)btn('Point here',()=>this.pointHere());btn('Delete',()=>this.delSel(),'del')}
+if(show){pop.style.display='flex';const above=gy>H*.62;const gy2=above?Math.min(...this.selPts().map(i=>S[i][1]))-58:gy+6;pop.style.left=Math.max(80,Math.min(R2.width-80,gx*R2.width/W))+'px';pop.style.top=Math.max(4,Math.min(R2.height-50,gy2*R2.height/H))+'px'}else pop.style.display='none';
+this.bAx.className=this.ax?'on':'';this.bNr.className=this.nrm?'on':'';this.bLk.className=this.lock?'on':'';this.bMu.className=this.multi?'on':'';this.bSt.className=this.strip?'on':'';this.bPt.className=this.shelf?'on':'';this.shelfEl.style.display=this.shelf?'flex':'none';this.bRn.className='pri'+(this.rain&&!this.rain.done?' on':'');this.bRn.textContent=this.rain&&!this.rain.done?'■ Stop':'☂ Rain';
+[...this.sw.children].forEach((b,i)=>b.style.outline=i===this.col?'3px solid #102a43':'none');
+const co=this.comps().map(ids=>this.info(ids)).filter(x=>x.closed).length;
+const hint=this.placing?'':this.picks.length?'Corners picked: '+this.picks.length+' of 3. Tap another point or the ground. Tap a picked corner to cancel it.':this.msg;
+const hint2=this.placing?'Tap the ground where the '+this.placing+' goes.':hint;this.stat.innerHTML='';this.stat.append(h('div',{},this.tris.length+' triangles · '+this.pts.filter(Boolean).length+' points · '+co+' closed object'+(co===1?'':'s')+' · open edges: '+this.nOpen+(this.nBack?' · backward: '+this.nBack:'')),h('div',{style:'font-weight:400'},hint2));
+const act=h('div',{style:'display:flex;gap:6px;flex-wrap:wrap;margin-top:6px'});if(this.selP>=0&&this.pts[this.selP]&&!this.sel.length)act.append(h('button',{class:'b',onclick:()=>this.delSel()},'Delete point'));if(this.nBack)act.append(h('button',{class:'b pri',onclick:()=>this.fixFacing()},'Fix facing ('+this.nBack+')'));if(act.children.length)this.stat.append(act);
+this.renderMissions();save()},
+renderMissions(){const M=this.missions(),E=this.earned;const kd=(g,rows)=>rows.map((r,i)=>{const k=g+i;if(r[1])E[k]=true;return[r[0],!!E[k]]});const B=kd('b',M.build),P=kd('p',M.pond),Mo=kd('m',M.more);
+const mk=(title,rows)=>{const ok=rows.every(r=>r[1]);return h('div',{},h('div',{class:'mh'},(ok?'✓ ':'')+title),rows.map(r=>h('div',{class:'ms',html:(r[1]?'✅ ':'⬜ ')+r[0]})))};
+this.ms.innerHTML='';this.ms.append(mk('Mission 1: Build something',B),mk('Mission 2: Dig a pond',P),mk('Bonus: Build even more',Mo),h('div',{class:'cap'},'Ticks stay once earned. Clear the city whenever you need room.'));
+this.done=B.every(r=>r[1])&&P.every(r=>r[1]);refreshProg()}};
+const STATIONS=[S2,S3,CITY];let cur=0;const KEY='meshcity18d';
+function save(){clearTimeout(save.t);save.t=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify({cur,S:STATIONS.map(s=>s.ser())}))}catch(e){}},250)}
+function refreshProg(){document.querySelectorAll('.tab').forEach((t,i)=>{t.className='tab'+(i===cur?' on':'')+(STATIONS[i].done?' done':'')})}
+function show(i){cur=i;const st=$('#stage');st.innerHTML='';STATIONS[i].mount(st);refreshProg();save()}
+function start(){STATIONS.forEach(x=>x.init(7));try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(o&&o.S&&o.S.length===STATIONS.length){STATIONS.forEach((s,i)=>s.des(o.S[i]));cur=o.cur||0}}catch(e){}show(cur)}
+const tabs=$('#tabs');let lastG='';STATIONS.forEach((s,i)=>{if(s.group!==lastG){tabs.append(h('span',{class:'grp'},s.group));lastG=s.group}tabs.append(h('button',{class:'tab',onclick:()=>show(i)},s.short))});
+$('#bClear').onclick=()=>{if(confirm('Clear all progress on this page?')){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}};
+start();
+</script></div></body></html>
